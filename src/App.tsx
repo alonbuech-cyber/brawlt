@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginScreen } from '@/screens/LoginScreen';
 import { JoinScreen } from '@/screens/JoinScreen';
@@ -31,16 +31,18 @@ export default function App() {
   const [historyDetail, setHistoryDetail] = useState<HistoryEntry | null>(null);
   const [adminView, setAdminView] = useState<AdminView>('home');
   const [adminSelectedTournament, setAdminSelectedTournament] = useState<Tournament | null>(null);
+  const tournamentLoadedRef = useRef(false);
 
   const loadActiveTournament = useCallback(async () => {
     setLoadingTournament(true);
     const result = await getMyActiveTournament();
     setActiveTournament(result);
     setLoadingTournament(false);
+    tournamentLoadedRef.current = true;
   }, []);
 
   useEffect(() => {
-    if (session && profile && !profile.is_admin) {
+    if (session && profile && !profile.is_admin && !tournamentLoadedRef.current) {
       loadActiveTournament();
     }
   }, [session, profile, loadActiveTournament]);
@@ -132,7 +134,7 @@ export default function App() {
             <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <JoinScreen onJoined={loadActiveTournament} />
+          <JoinScreen onJoined={() => { tournamentLoadedRef.current = false; loadActiveTournament(); }} />
         )
       )}
 
