@@ -1,0 +1,1 @@
+https://gujjqgscolctgshkiyyk.supabase.co project superbase url. annon public key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1ampxZ3Njb2xjdGdzaGtpeXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTA3NTQsImV4cCI6MjA5MDI4Njc1NH0.MnSZbVWL3eKy9qCpf-j8P7HHUtTkkHVGSMloH0nwyGQ.
