@@ -7,7 +7,7 @@ interface PinPadProps {
   label?: string;
 }
 
-export function PinPad({ length = 4, onComplete, label = 'Enter PIN' }: PinPadProps) {
+export function PinPad({ length = 6, onComplete, label = 'Enter PIN' }: PinPadProps) {
   const [pin, setPin] = useState('');
 
   const handleDigit = (digit: string) => {

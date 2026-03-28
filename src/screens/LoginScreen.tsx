@@ -190,7 +190,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
         {/* PIN step */}
         {step === 'pin' && (
           <div className="flex flex-col items-center gap-4">
-            <PinPad onComplete={handlePinLogin} label="Enter your 4-digit passcode" />
+            <PinPad onComplete={handlePinLogin} label="Enter your 6-digit passcode" />
             {error && <p className="text-magenta text-sm text-center">{error}</p>}
             {loading && <p className="text-text-secondary text-sm">Signing in...</p>}
             <button
@@ -253,7 +253,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
         {/* Set PIN step */}
         {step === 'set-pin' && (
           <div className="flex flex-col items-center gap-4">
-            <PinPad onComplete={handleSetPin} label="Set a 4-digit passcode" />
+            <PinPad onComplete={handleSetPin} label="Set a 6-digit passcode" />
             {error && <p className="text-magenta text-sm text-center">{error}</p>}
           </div>
         )}
