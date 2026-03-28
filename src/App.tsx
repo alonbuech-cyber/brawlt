@@ -6,6 +6,7 @@ import { CheckInScreen } from '@/screens/CheckInScreen';
 import { LeaderboardScreen } from '@/screens/LeaderboardScreen';
 import { HistoryScreen } from '@/screens/HistoryScreen';
 import { TournamentDetailScreen } from '@/screens/TournamentDetailScreen';
+import { AdminHomeScreen } from '@/screens/AdminHomeScreen';
 import { CreateTournamentScreen } from '@/screens/CreateTournamentScreen';
 import { AdminPanelScreen } from '@/screens/AdminPanelScreen';
 import { BottomNav, type TabId } from '@/components/BottomNav';
@@ -13,7 +14,7 @@ import { getMyActiveTournament } from '@/lib/tournaments';
 import type { Tournament, Participant } from '@/types/database';
 import { LogOut } from 'lucide-react';
 
-type AdminScreen = 'create' | 'panel';
+type AdminView = 'home' | 'create' | 'panel';
 
 interface HistoryEntry {
   tournament: Tournament;
@@ -28,7 +29,8 @@ export default function App() {
   const [activeTournament, setActiveTournament] = useState<{ tournament: Tournament; participant: Participant } | null>(null);
   const [loadingTournament, setLoadingTournament] = useState(false);
   const [historyDetail, setHistoryDetail] = useState<HistoryEntry | null>(null);
-  const [adminScreen, setAdminScreen] = useState<AdminScreen>('create');
+  const [adminView, setAdminView] = useState<AdminView>('home');
+  const [adminSelectedTournament, setAdminSelectedTournament] = useState<Tournament | null>(null);
 
   const loadActiveTournament = useCallback(async () => {
     setLoadingTournament(true);
@@ -61,17 +63,27 @@ export default function App() {
   if (profile.is_admin) {
     return (
       <div className="min-h-screen bg-gray-950">
-        {adminScreen === 'create' ? (
-          <CreateTournamentScreen
-            onCreated={() => {}}
-            onGoToPanel={() => setAdminScreen('panel')}
+        {adminView === 'home' && (
+          <AdminHomeScreen
+            onCreateNew={() => setAdminView('create')}
+            onSelectTournament={(t) => {
+              setAdminSelectedTournament(t);
+              setAdminView('panel');
+            }}
           />
-        ) : (
-          <AdminPanelScreen onBack={() => setAdminScreen('create')} />
+        )}
+        {adminView === 'create' && (
+          <CreateTournamentScreen
+            onCreated={() => setAdminView('home')}
+            onGoToPanel={() => setAdminView('home')}
+          />
+        )}
+        {adminView === 'panel' && (
+          <AdminPanelScreen onBack={() => { setAdminView('home'); setAdminSelectedTournament(null); }} />
         )}
         <button
           onClick={signOut}
-          className="fixed top-4 left-4 text-gray-500 p-2"
+          className="fixed top-4 left-4 text-gray-500 p-2 z-50"
         >
           <LogOut className="w-5 h-5" />
         </button>

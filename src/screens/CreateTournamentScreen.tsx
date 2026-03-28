@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createTournament } from '@/lib/tournaments';
 import type { BracketName, Tournament } from '@/types/database';
-import { Shield, Copy, Share2, Plus } from 'lucide-react';
+import { Shield, Copy, Share2, Plus, ArrowLeft } from 'lucide-react';
 
 const BRACKETS: { name: BracketName; min: number; max: number | null }[] = [
   { name: 'Wood', min: 0, max: 499 },
@@ -113,8 +113,8 @@ export function CreateTournamentScreen({ onCreated, onGoToPanel }: CreateTournam
             <button onClick={() => { setCreated(null); setName(''); }} className="flex-1 bg-gray-800 text-white py-3 rounded-xl font-semibold active:scale-95">
               <Plus className="w-4 h-4 inline mr-1" /> New
             </button>
-            <button onClick={onGoToPanel} className="flex-1 bg-violet-600 text-white py-3 rounded-xl font-semibold active:scale-95">
-              Admin Panel
+            <button onClick={onCreated} className="flex-1 bg-violet-600 text-white py-3 rounded-xl font-semibold active:scale-95">
+              My Tournaments
             </button>
           </div>
         </div>
@@ -126,16 +126,17 @@ export function CreateTournamentScreen({ onCreated, onGoToPanel }: CreateTournam
     <div className="min-h-screen bg-gray-950 px-4 pt-8 pb-24">
       <div className="max-w-sm mx-auto flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white">Create Tournament</h1>
+          <button onClick={onGoToPanel} className="flex items-center gap-2 text-gray-400">
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-sm">Back</span>
+          </button>
           <div className="flex items-center gap-1.5">
             <Shield className="w-4 h-4 text-violet-400" />
             <span className="text-xs font-bold text-violet-400">Admin</span>
           </div>
         </div>
 
-        <button onClick={onGoToPanel} className="bg-gray-800 text-violet-400 py-2.5 rounded-xl text-sm font-semibold active:scale-95">
-          Go to Admin Panel
-        </button>
+        <h1 className="text-xl font-bold text-white">Create Tournament</h1>
 
         {/* Name */}
         <div>
