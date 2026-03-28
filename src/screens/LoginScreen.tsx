@@ -23,7 +23,6 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if user exists with a passcode set
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, passcode_hash')
@@ -31,10 +30,8 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
       .single();
 
     if (profile?.passcode_hash) {
-      // Existing user with passcode — go straight to PIN
       setStep('pin');
     } else {
-      // New user or no passcode — send email OTP for signup
       const { error: otpError } = await supabase.auth.signInWithOtp({ email: normalizedEmail });
       if (otpError) {
         setError(otpError.message);
@@ -51,7 +48,6 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     setLoading(true);
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Sign in with email + password (PIN is the password)
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password: pin,
@@ -63,7 +59,6 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
       return;
     }
 
-    // Session created, done
     onLogin();
     setLoading(false);
   };
@@ -92,7 +87,6 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     if (isNewUser) {
       setStep('set-name');
     } else {
-      // Existing user without passcode — set one up
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -127,7 +121,6 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Upsert profile
     await supabase.from('profiles').upsert({
       id: user.id,
       email: normalizedEmail,
@@ -142,7 +135,6 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     setError('');
     setLoading(true);
 
-    // Save PIN as the Supabase auth password so future logins don't need OTP
     const { error: updateError } = await supabase.auth.updateUser({
       password: pin,
     });
@@ -153,7 +145,6 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
       return;
     }
 
-    // Also save hash in profiles for the verify_passcode RPC
     const { error: rpcError } = await supabase.rpc('set_passcode', {
       new_passcode: pin,
     });
@@ -169,12 +160,12 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
         {/* Logo */}
         <div className="flex flex-col items-center gap-1">
-          <img src="/logo.jpg" alt="BrawlT" className="w-40 h-40 object-contain" />
-          <p className="text-sm text-gray-400">Brawl Stars Tournaments</p>
+          <img src="/logo.jpg" alt="BrawlT" className="w-44 h-44 object-contain drop-shadow-[0_0_30px_rgba(255,204,0,0.3)]" />
+          <p className="text-sm text-text-secondary">Brawl Stars Tournaments</p>
         </div>
 
         {/* Email step */}
@@ -185,27 +176,23 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none text-lg"
+              className="brawl-input"
               autoCapitalize="none"
               autoCorrect="off"
             />
-            <button
-              onClick={handleEmailSubmit}
-              disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-3.5 rounded-xl font-semibold transition-all active:scale-[0.98]"
-            >
+            <button onClick={handleEmailSubmit} disabled={loading} className="btn-primary">
               {loading ? 'Loading...' : 'Continue'}
             </button>
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            {error && <p className="text-magenta text-sm text-center">{error}</p>}
           </div>
         )}
 
-        {/* PIN step — returning users, no email needed */}
+        {/* PIN step */}
         {step === 'pin' && (
           <div className="flex flex-col items-center gap-4">
             <PinPad onComplete={handlePinLogin} label="Enter your 4-digit passcode" />
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            {loading && <p className="text-gray-400 text-sm">Signing in...</p>}
+            {error && <p className="text-magenta text-sm text-center">{error}</p>}
+            {loading && <p className="text-text-secondary text-sm">Signing in...</p>}
             <button
               onClick={async () => {
                 setIsNewUser(false);
@@ -213,17 +200,17 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 await supabase.auth.signInWithOtp({ email: normalizedEmail });
                 setStep('otp');
               }}
-              className="text-violet-400 text-sm"
+              className="text-cyan text-sm"
             >
               Forgot passcode?
             </button>
           </div>
         )}
 
-        {/* OTP step — only for signup and forgot passcode */}
+        {/* OTP step */}
         {step === 'otp' && (
           <div className="w-full flex flex-col gap-4">
-            <p className="text-sm text-gray-400 text-center">
+            <p className="text-sm text-text-secondary text-center">
               Enter the 6-digit code sent to {email}
             </p>
             <input
@@ -233,23 +220,19 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
               placeholder="000000"
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-              className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 rounded-xl text-white text-center text-2xl font-mono tracking-[0.5em] placeholder-gray-600 focus:border-violet-500 focus:outline-none"
+              className="brawl-input text-center text-2xl font-mono tracking-[0.5em]"
             />
-            <button
-              onClick={handleOtpVerify}
-              disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-3.5 rounded-xl font-semibold transition-all active:scale-[0.98]"
-            >
+            <button onClick={handleOtpVerify} disabled={loading} className="btn-primary">
               {loading ? 'Verifying...' : 'Verify'}
             </button>
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            {error && <p className="text-magenta text-sm text-center">{error}</p>}
           </div>
         )}
 
         {/* Set name step */}
         {step === 'set-name' && (
           <div className="w-full flex flex-col gap-4">
-            <p className="text-sm text-gray-400 text-center">
+            <p className="text-sm text-text-secondary text-center">
               Choose a display name for tournaments
             </p>
             <input
@@ -258,16 +241,12 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               maxLength={20}
-              className="w-full px-4 py-3.5 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none text-lg"
+              className="brawl-input"
             />
-            <button
-              onClick={handleSetName}
-              disabled={loading || !displayName.trim()}
-              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-3.5 rounded-xl font-semibold transition-all active:scale-[0.98]"
-            >
+            <button onClick={handleSetName} disabled={loading || !displayName.trim()} className="btn-secondary">
               {loading ? 'Saving...' : 'Next'}
             </button>
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            {error && <p className="text-magenta text-sm text-center">{error}</p>}
           </div>
         )}
 
@@ -275,7 +254,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
         {step === 'set-pin' && (
           <div className="flex flex-col items-center gap-4">
             <PinPad onComplete={handleSetPin} label="Set a 4-digit passcode" />
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            {error && <p className="text-magenta text-sm text-center">{error}</p>}
           </div>
         )}
       </div>

@@ -40,7 +40,6 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Load player tag from profile
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -89,12 +88,12 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
   });
 
   return (
-    <div className="px-4 pt-6 pb-24">
+    <div className="px-4 pt-6 pb-28">
       <div className="max-w-sm mx-auto flex flex-col gap-5">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-lg font-bold text-white">{tournament.name}</h1>
-          <p className="text-sm text-gray-400">Day {currentDay} of {tournament.duration_days}</p>
+          <h1 className="text-xl font-brawl text-gold">{tournament.name}</h1>
+          <p className="text-sm text-text-secondary">Day {currentDay} of {tournament.duration_days}</p>
         </div>
 
         {/* Metrics */}
@@ -109,26 +108,22 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
         </div>
 
         {/* Countdown */}
-        <div className="bg-gray-800/60 rounded-2xl p-4 text-center">
-          <p className="text-xs text-gray-400 mb-2">Deadline</p>
-          <p className="text-3xl font-bold text-white font-mono">
+        <div className="brawl-card p-5 text-center">
+          <p className="text-xs text-text-secondary mb-2">Deadline</p>
+          <p className="text-4xl font-bold text-cyan font-mono" style={{ textShadow: '0 0 20px rgba(0,212,255,0.4)' }}>
             {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
           </p>
         </div>
 
         {/* Streak */}
         <div className="flex flex-col items-center gap-2">
-          <p className="text-xs text-gray-400">Check-in streak</p>
+          <p className="text-xs text-text-secondary">Check-in streak</p>
           <StreakDots dots={dots} currentDay={currentDay} />
         </div>
 
         {/* Check-in button */}
         {!todaySub && !checkInResult && (
-          <button
-            onClick={handleCheckIn}
-            disabled={checkingIn}
-            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-4 rounded-2xl font-semibold text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3"
-          >
+          <button onClick={handleCheckIn} disabled={checkingIn} className="btn-primary text-lg">
             {checkingIn ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -145,25 +140,23 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
 
         {/* Check-in success */}
         {(todaySub?.ocr_status === 'approved' || checkInResult) && (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 flex flex-col items-center gap-3">
-            <CheckCircle className="w-10 h-10 text-emerald-400" />
-            <p className="text-emerald-300 font-semibold">Checked in!</p>
-            <div className="text-sm text-gray-300 text-center space-y-1">
-              <p>Brawler: {checkInResult?.brawler_name || todaySub?.brawler_detected || '—'}</p>
-              <p>Trophies: {checkInResult?.trophy_count ?? todaySub?.trophy_count ?? '—'}</p>
-              <p className="text-xs text-gray-500">
-                Verified via Brawl Stars API
-              </p>
+          <div className="brawl-card p-5 flex flex-col items-center gap-3" style={{ borderColor: 'rgba(0,255,159,0.3)' }}>
+            <CheckCircle className="w-10 h-10 text-lime" style={{ filter: 'drop-shadow(0 0 10px rgba(0,255,159,0.5))' }} />
+            <p className="text-lime font-brawl text-lg">Checked in!</p>
+            <div className="text-sm text-text-secondary text-center space-y-1">
+              <p>Brawler: <span className="text-white font-semibold">{checkInResult?.brawler_name || todaySub?.brawler_detected || '—'}</span></p>
+              <p>Trophies: <span className="text-gold font-bold">{checkInResult?.trophy_count ?? todaySub?.trophy_count ?? '—'}</span></p>
+              <p className="text-xs text-text-secondary/60">Verified via Brawl Stars API</p>
             </div>
             {currentDay < tournament.duration_days && (
-              <p className="text-xs text-gray-400 text-center">
+              <p className="text-xs text-text-secondary text-center mt-2">
                 Come back tomorrow before {tournament.daily_deadline_hour}:00 UTC for Day {currentDay + 1}
               </p>
             )}
           </div>
         )}
 
-        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+        {error && <p className="text-magenta text-sm text-center">{error}</p>}
       </div>
     </div>
   );

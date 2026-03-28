@@ -1,21 +1,242 @@
 @import "tailwindcss";
 
+@theme {
+  --color-dark-bg: #2C0B5E;
+  --color-deep-bg: #0F0822;
+  --color-card-bg: #1A1233;
+  --color-gold: #FFCC00;
+  --color-gold-dark: #FFAA00;
+  --color-cyan: #00D4FF;
+  --color-cyan-dark: #00A8CC;
+  --color-magenta: #FF3399;
+  --color-lime: #00FF9F;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #E0E0FF;
+}
+
 :root {
   color-scheme: dark;
 }
 
+@font-face {
+  font-family: 'Bungee';
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/bungee/v14/N0bU2SZBIuF2PU_0AnHR.woff2') format('woff2');
+}
+
 body {
   margin: 0;
-  background: #030712;
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(180deg, #2C0B5E 0%, #0F0822 100%);
+  background-attachment: fixed;
+  color: #FFFFFF;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  min-height: 100vh;
+}
+
+/* Star pattern background overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle at 20% 30%, rgba(255, 204, 0, 0.03) 1px, transparent 1px),
+                     radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                     radial-gradient(circle at 50% 70%, rgba(255, 51, 153, 0.02) 1px, transparent 1px),
+                     radial-gradient(circle at 10% 80%, rgba(255, 204, 0, 0.02) 1px, transparent 1px),
+                     radial-gradient(circle at 90% 60%, rgba(0, 212, 255, 0.02) 1px, transparent 1px);
+  background-size: 200px 200px, 300px 300px, 250px 250px, 180px 180px, 220px 220px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Neon glow utilities */
+.glow-gold {
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.4), 0 0 40px rgba(255, 204, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glow-magenta {
+  box-shadow: 0 0 20px rgba(255, 51, 153, 0.4), 0 0 40px rgba(255, 51, 153, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glow-lime {
+  box-shadow: 0 0 20px rgba(0, 255, 159, 0.4), 0 0 40px rgba(0, 255, 159, 0.15);
+}
+
+/* Brawl title font */
+.font-brawl {
+  font-family: 'Bungee', Impact, 'Arial Black', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Card style */
+.brawl-card {
+  background: rgba(26, 18, 51, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(0, 212, 255, 0.15);
+  border-radius: 20px;
+}
+
+.brawl-card-gold {
+  background: rgba(26, 18, 51, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 204, 0, 0.25);
+  border-radius: 20px;
+}
+
+/* Primary button (gold) */
+.btn-primary {
+  background: linear-gradient(135deg, #FFCC00, #FFAA00);
+  color: #1A1233;
+  font-weight: 700;
+  font-size: 1.125rem;
+  min-height: 56px;
+  border-radius: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.4), 0 0 40px rgba(255, 204, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary button (cyan) */
+.btn-secondary {
+  background: linear-gradient(135deg, #00D4FF, #00A8CC);
+  color: #1A1233;
+  font-weight: 700;
+  font-size: 1rem;
+  min-height: 56px;
+  border-radius: 24px;
+  border: 3px solid rgba(255, 51, 153, 0.2);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+.btn-secondary:active {
+  transform: scale(0.95);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+}
+
+/* Tertiary / outline button */
+.btn-outline {
+  background: transparent;
+  color: #00D4FF;
+  font-weight: 700;
+  font-size: 1rem;
+  min-height: 56px;
+  border-radius: 24px;
+  border: 3px solid rgba(255, 51, 153, 0.4);
+  box-shadow: 0 0 15px rgba(255, 51, 153, 0.2);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+.btn-outline:active {
+  transform: scale(0.95);
+}
+
+/* Input field */
+.brawl-input {
+  background: rgba(26, 18, 51, 0.9);
+  border: 2px solid rgba(0, 212, 255, 0.2);
+  border-radius: 16px;
+  color: #FFFFFF;
+  font-size: 1.125rem;
+  padding: 14px 18px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.brawl-input::placeholder {
+  color: rgba(224, 224, 255, 0.35);
+}
+
+.brawl-input:focus {
+  border-color: #00D4FF;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+}
+
+/* Badge / tag pill */
+.brawl-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.brawl-badge-magenta {
+  background: rgba(255, 51, 153, 0.2);
+  color: #FF3399;
+  border: 1px solid rgba(255, 51, 153, 0.3);
+}
+
+.brawl-badge-lime {
+  background: rgba(0, 255, 159, 0.15);
+  color: #00FF9F;
+  border: 1px solid rgba(0, 255, 159, 0.3);
+}
+
+.brawl-badge-gold {
+  background: rgba(255, 204, 0, 0.15);
+  color: #FFCC00;
+  border: 1px solid rgba(255, 204, 0, 0.3);
+}
+
+.brawl-badge-cyan {
+  background: rgba(0, 212, 255, 0.15);
+  color: #00D4FF;
+  border: 1px solid rgba(0, 212, 255, 0.3);
 }
 
 /* Hide spinners on number inputs */
@@ -39,12 +260,12 @@ input[type="number"] {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: rgba(0, 212, 255, 0.3);
   border-radius: 2px;
 }
 
 /* Select dark mode fix */
 select option {
-  background: #1f2937;
+  background: #1A1233;
   color: white;
 }

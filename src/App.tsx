@@ -48,8 +48,8 @@ export default function App() {
   // Loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -62,7 +62,7 @@ export default function App() {
   // Admin
   if (profile.is_admin) {
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen">
         {adminView === 'home' && (
           <AdminHomeScreen
             onCreateNew={() => setAdminView('create')}
@@ -83,7 +83,7 @@ export default function App() {
         )}
         <button
           onClick={signOut}
-          className="fixed top-4 left-4 text-gray-500 p-2 z-50"
+          className="fixed top-4 left-4 text-text-secondary/50 p-2 z-50"
         >
           <LogOut className="w-5 h-5" />
         </button>
@@ -94,7 +94,7 @@ export default function App() {
   // Regular user — tournament detail from history
   if (historyDetail) {
     return (
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen">
         <TournamentDetailScreen
           tournament={historyDetail.tournament}
           participant={historyDetail.participant}
@@ -111,11 +111,11 @@ export default function App() {
   const hasActiveTournament = !!activeTournament;
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen">
       {/* Sign out */}
       <button
         onClick={signOut}
-        className="fixed top-4 right-4 z-50 text-gray-500 p-2"
+        className="fixed top-4 right-4 z-50 text-text-secondary/50 p-2"
       >
         <LogOut className="w-5 h-5" />
       </button>
@@ -129,7 +129,7 @@ export default function App() {
           />
         ) : loadingTournament ? (
           <div className="flex items-center justify-center pt-32">
-            <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <JoinScreen onJoined={loadActiveTournament} />

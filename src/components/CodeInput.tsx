@@ -56,7 +56,9 @@ export function CodeInput({ length = 5, onComplete }: CodeInputProps) {
           value={c}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
-          className="w-12 h-14 text-center text-2xl font-mono font-bold rounded-xl border-2 border-gray-600 bg-gray-800 text-white focus:border-violet-500 focus:outline-none uppercase"
+          className={`w-14 h-16 text-center text-2xl font-mono font-bold rounded-2xl border-3 bg-card-bg/80 text-white uppercase transition-all ${
+            c ? 'border-gold glow-gold' : 'border-cyan/20 focus:border-cyan focus:glow-cyan'
+          } focus:outline-none`}
         />
       ))}
     </div>

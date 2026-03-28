@@ -13,12 +13,12 @@ const BRACKETS: { name: BracketName; min: number; max: number | null }[] = [
 ];
 
 const bracketColors: Record<BracketName, string> = {
-  Wood: 'bg-amber-900/40 border-amber-700 text-amber-300',
-  Bronze: 'bg-orange-900/40 border-orange-700 text-orange-300',
-  Silver: 'bg-gray-600/40 border-gray-500 text-gray-200',
-  Gold: 'bg-yellow-900/40 border-yellow-600 text-yellow-300',
-  Prestige1: 'bg-purple-900/40 border-purple-600 text-purple-300',
-  Prestige2: 'bg-red-900/40 border-red-600 text-red-300',
+  Wood: 'bg-amber-900/30 border-amber-700/40 text-amber-300',
+  Bronze: 'bg-orange-900/30 border-orange-700/40 text-orange-300',
+  Silver: 'bg-gray-500/20 border-gray-400/40 text-gray-200',
+  Gold: 'bg-gold/10 border-gold/40 text-gold',
+  Prestige1: 'bg-magenta/10 border-magenta/40 text-magenta',
+  Prestige2: 'bg-red-500/15 border-red-500/40 text-red-300',
 };
 
 interface CreateTournamentScreenProps {
@@ -80,29 +80,30 @@ export function CreateTournamentScreen({ onCreated, onGoToPanel }: CreateTournam
 
   if (created) {
     return (
-      <div className="min-h-screen bg-gray-950 px-4 pt-12 pb-24">
+      <div className="min-h-screen px-4 pt-12 pb-24">
         <div className="max-w-sm mx-auto flex flex-col items-center gap-8">
           <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-violet-400" />
-            <span className="text-xs font-bold text-violet-400 uppercase tracking-wider">Admin</span>
+            <Shield className="w-5 h-5 text-cyan" />
+            <span className="text-xs font-bold text-cyan uppercase tracking-wider">Admin</span>
           </div>
 
           <div className="text-center">
-            <h1 className="text-xl font-bold text-white mb-2">Tournament Created!</h1>
-            <p className="text-sm text-gray-400">{created.name}</p>
+            <h1 className="text-2xl font-brawl text-lime mb-2">Tournament Created!</h1>
+            <p className="text-sm text-text-secondary">{created.name}</p>
           </div>
 
-          <div className="bg-gray-800/60 rounded-2xl p-6 w-full flex flex-col items-center gap-4">
-            <p className="text-xs text-gray-400">Invite Code</p>
-            <p className="text-4xl font-mono font-bold text-white tracking-[0.3em]">
+          <div className="brawl-card-gold p-6 w-full flex flex-col items-center gap-4">
+            <p className="text-xs text-text-secondary">Invite Code</p>
+            <p className="text-4xl font-mono font-bold text-gold tracking-[0.3em]"
+              style={{ textShadow: '0 0 20px rgba(255,204,0,0.4)' }}>
               {created.invite_code}
             </p>
             <div className="flex gap-3">
-              <button onClick={handleCopy} className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm active:scale-95">
+              <button onClick={handleCopy} className="btn-outline !min-h-[44px] !w-auto !text-sm px-5">
                 <Copy className="w-4 h-4" /> Copy
               </button>
               {typeof navigator.share === 'function' && (
-                <button onClick={handleShare} className="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm active:scale-95">
+                <button onClick={handleShare} className="btn-secondary !min-h-[44px] !w-auto !text-sm px-5">
                   <Share2 className="w-4 h-4" /> Share
                 </button>
               )}
@@ -110,10 +111,10 @@ export function CreateTournamentScreen({ onCreated, onGoToPanel }: CreateTournam
           </div>
 
           <div className="flex gap-3 w-full">
-            <button onClick={() => { setCreated(null); setName(''); }} className="flex-1 bg-gray-800 text-white py-3 rounded-xl font-semibold active:scale-95">
-              <Plus className="w-4 h-4 inline mr-1" /> New
+            <button onClick={() => { setCreated(null); setName(''); }} className="btn-outline flex-1">
+              <Plus className="w-4 h-4" /> New
             </button>
-            <button onClick={onCreated} className="flex-1 bg-violet-600 text-white py-3 rounded-xl font-semibold active:scale-95">
+            <button onClick={onCreated} className="btn-primary flex-1">
               My Tournaments
             </button>
           </div>
@@ -123,45 +124,45 @@ export function CreateTournamentScreen({ onCreated, onGoToPanel }: CreateTournam
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 px-4 pt-8 pb-24">
+    <div className="min-h-screen px-4 pt-8 pb-24">
       <div className="max-w-sm mx-auto flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <button onClick={onGoToPanel} className="flex items-center gap-2 text-gray-400">
+          <button onClick={onGoToPanel} className="flex items-center gap-2 text-text-secondary">
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
           </button>
           <div className="flex items-center gap-1.5">
-            <Shield className="w-4 h-4 text-violet-400" />
-            <span className="text-xs font-bold text-violet-400">Admin</span>
+            <Shield className="w-4 h-4 text-cyan" />
+            <span className="text-xs font-bold text-cyan">Admin</span>
           </div>
         </div>
 
-        <h1 className="text-xl font-bold text-white">Create Tournament</h1>
+        <h1 className="text-2xl font-brawl text-gold">Create Tournament</h1>
 
         {/* Name */}
         <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Tournament name</label>
+          <label className="text-xs text-text-secondary block mb-1.5">Tournament name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Weekly Showdown"
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none"
+            className="brawl-input"
           />
         </div>
 
         {/* Bracket */}
         <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Bracket</label>
+          <label className="text-xs text-text-secondary block mb-1.5">Bracket</label>
           <div className="grid grid-cols-3 gap-2">
             {BRACKETS.map(b => (
               <button
                 key={b.name}
                 onClick={() => setBracket(b.name)}
-                className={`py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                className={`py-3 rounded-2xl text-xs font-bold border-2 transition-all active:scale-95 ${
                   bracket === b.name
-                    ? bracketColors[b.name] + ' ring-2 ring-violet-500'
-                    : 'bg-gray-800 border-gray-700 text-gray-400'
+                    ? bracketColors[b.name] + ' ring-2 ring-gold/50'
+                    : 'bg-card-bg/60 border-cyan/10 text-text-secondary/60'
                 }`}
               >
                 {b.name.replace('Prestige', 'P')}
@@ -174,35 +175,35 @@ export function CreateTournamentScreen({ onCreated, onGoToPanel }: CreateTournam
 
         {/* Brawler lock */}
         <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Brawler lock (optional)</label>
+          <label className="text-xs text-text-secondary block mb-1.5">Brawler lock (optional)</label>
           <input
             type="text"
             value={brawlerLock}
             onChange={(e) => setBrawlerLock(e.target.value)}
             placeholder="e.g. Shelly (leave empty for any)"
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none"
+            className="brawl-input"
           />
         </div>
 
         {/* Start date */}
         <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Start date</label>
+          <label className="text-xs text-text-secondary block mb-1.5">Start date</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-violet-500 focus:outline-none"
+            className="brawl-input"
           />
         </div>
 
         {/* Deadline hour + duration */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-400 block mb-1.5">Daily deadline (UTC)</label>
+            <label className="text-xs text-text-secondary block mb-1.5">Daily deadline (UTC)</label>
             <select
               value={deadlineHour}
               onChange={(e) => setDeadlineHour(parseInt(e.target.value))}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-violet-500 focus:outline-none"
+              className="brawl-input"
             >
               {Array.from({ length: 24 }, (_, i) => (
                 <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
@@ -210,11 +211,11 @@ export function CreateTournamentScreen({ onCreated, onGoToPanel }: CreateTournam
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1.5">Duration (days)</label>
+            <label className="text-xs text-text-secondary block mb-1.5">Duration (days)</label>
             <select
               value={durationDays}
               onChange={(e) => setDurationDays(parseInt(e.target.value))}
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-violet-500 focus:outline-none"
+              className="brawl-input"
             >
               {[3, 5, 7, 10, 14].map(d => (
                 <option key={d} value={d}>{d} days</option>
@@ -225,23 +226,19 @@ export function CreateTournamentScreen({ onCreated, onGoToPanel }: CreateTournam
 
         {/* Max participants */}
         <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Max participants (optional)</label>
+          <label className="text-xs text-text-secondary block mb-1.5">Max participants (optional)</label>
           <input
             type="number"
             value={maxParticipants}
             onChange={(e) => setMaxParticipants(e.target.value)}
             placeholder="Unlimited"
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-violet-500 focus:outline-none"
+            className="brawl-input"
           />
         </div>
 
-        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+        {error && <p className="text-magenta text-sm text-center">{error}</p>}
 
-        <button
-          onClick={handleCreate}
-          disabled={loading}
-          className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-3.5 rounded-xl font-semibold transition-all active:scale-[0.98]"
-        >
+        <button onClick={handleCreate} disabled={loading} className="btn-primary">
           {loading ? 'Creating...' : 'Create Tournament'}
         </button>
       </div>

@@ -18,20 +18,24 @@ export function BottomNav({ active, onChange, hasActiveTournament }: BottomNavPr
   const visibleTabs = tabs.filter(t => t.showAlways || hasActiveTournament);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur border-t border-gray-800 safe-area-bottom">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
-        {visibleTabs.map(({ id, icon: Icon, label }) => (
-          <button
-            key={id}
-            onClick={() => onChange(id)}
-            className={`flex flex-col items-center gap-1 px-4 py-2 transition-colors ${
-              active === id ? 'text-violet-400' : 'text-gray-500'
-            }`}
-          >
-            <Icon className="w-5 h-5" />
-            <span className="text-[10px] font-medium">{label}</span>
-          </button>
-        ))}
+    <nav className="fixed bottom-0 left-0 right-0 bg-deep-bg/95 backdrop-blur-md border-t border-cyan/10 safe-area-bottom">
+      <div className="flex justify-around items-center h-20 max-w-lg mx-auto">
+        {visibleTabs.map(({ id, icon: Icon, label }) => {
+          const isActive = active === id;
+          return (
+            <button
+              key={id}
+              onClick={() => onChange(id)}
+              className={`flex flex-col items-center gap-1 px-4 py-2 transition-all ${
+                isActive ? 'text-gold' : 'text-text-secondary/50'
+              }`}
+              style={isActive ? { filter: 'drop-shadow(0 0 8px rgba(255,204,0,0.5))' } : {}}
+            >
+              <Icon className="w-6 h-6" />
+              <span className="text-[11px] font-bold">{label}</span>
+            </button>
+          );
+        })}
       </div>
     </nav>
   );

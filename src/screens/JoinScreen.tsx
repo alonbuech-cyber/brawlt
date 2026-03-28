@@ -58,7 +58,6 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
     setPlayerName(player_name);
     setPlayerTag(tag);
 
-    // If brawler is locked, auto-select it
     if (tournament?.brawler_lock) {
       const locked = playerBrawlers.find(
         b => b.name.toLowerCase() === tournament.brawler_lock!.toLowerCase()
@@ -68,7 +67,6 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
         setValidating(false);
         return;
       }
-      // Check trophy range
       if (locked.trophies < tournament.trophy_min) {
         setError(`${locked.name} has ${locked.trophies} trophies, minimum is ${tournament.trophy_min}`);
         setValidating(false);
@@ -104,7 +102,6 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
       return;
     }
 
-    // If tournament has started, do Day 1 check-in
     const day = getCurrentDay(tournament);
     if (day >= 1) {
       await checkIn(tournament.id, participant.id, day, playerTag);
@@ -118,24 +115,24 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
   const hasStarted = tournament && new Date(tournament.starts_at) <= new Date();
 
   return (
-    <div className="min-h-screen bg-gray-950 px-4 pt-12 pb-24">
+    <div className="min-h-screen px-4 pt-12 pb-28">
       <div className="max-w-sm mx-auto flex flex-col gap-8">
         <div className="text-center">
-          <h1 className="text-xl font-bold text-white mb-1">Join Tournament</h1>
-          <p className="text-sm text-gray-400">Enter the invite code to get started</p>
+          <h1 className="text-2xl font-brawl text-gold mb-1">Join Tournament</h1>
+          <p className="text-sm text-text-secondary">Enter the invite code to get started</p>
         </div>
 
         {!tournament && (
           <div className="flex flex-col gap-4 items-center">
             <CodeInput length={5} onComplete={handleCodeComplete} />
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+            {error && <p className="text-magenta text-sm">{error}</p>}
           </div>
         )}
 
         {tournament && (
           <div className="flex flex-col gap-5">
             {/* Tournament card */}
-            <div className="bg-gray-800/60 rounded-2xl p-5 flex flex-col gap-4">
+            <div className="brawl-card-gold p-5 flex flex-col gap-4">
               <div className="flex items-start justify-between">
                 <h2 className="text-lg font-bold text-white">{tournament.name}</h2>
                 <BracketBadge bracket={tournament.bracket_name} />
@@ -143,26 +140,26 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {tournament.brawler_lock && (
-                  <div className="flex items-center gap-2 text-gray-300">
-                    <Lock className="w-4 h-4 text-gray-500" />
+                  <div className="flex items-center gap-2 text-text-secondary">
+                    <Lock className="w-4 h-4 text-magenta" />
                     {tournament.brawler_lock}
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-gray-300">
-                  <Calendar className="w-4 h-4 text-gray-500" />
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Calendar className="w-4 h-4 text-cyan" />
                   {new Date(tournament.starts_at).toLocaleDateString()}
                 </div>
-                <div className="flex items-center gap-2 text-gray-300">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  {tournament.daily_deadline_hour}:00 UTC daily
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Clock className="w-4 h-4 text-cyan" />
+                  {tournament.daily_deadline_hour}:00 UTC
                 </div>
-                <div className="flex items-center gap-2 text-gray-300">
-                  <Users className="w-4 h-4 text-gray-500" />
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Users className="w-4 h-4 text-cyan" />
                   {participantCount}{tournament.max_participants ? `/${tournament.max_participants}` : ''} players
                 </div>
               </div>
 
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-text-secondary/60">
                 Trophies: {tournament.trophy_min}{tournament.trophy_max ? `–${tournament.trophy_max}` : '+'}
               </div>
             </div>
@@ -170,7 +167,7 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
             {/* Player tag input */}
             {!playerName && !joined && (
               <div className="flex flex-col gap-3">
-                <p className="text-sm text-gray-400 text-center">
+                <p className="text-sm text-text-secondary text-center">
                   Enter your Brawl Stars player tag
                 </p>
                 <div className="flex gap-2">
@@ -179,17 +176,17 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
                     value={playerTag}
                     onChange={(e) => setPlayerTag(e.target.value.toUpperCase())}
                     placeholder="#ABC123"
-                    className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white font-mono text-lg placeholder-gray-500 focus:border-violet-500 focus:outline-none"
+                    className="brawl-input flex-1 font-mono text-lg"
                   />
                   <button
                     onClick={handleValidateTag}
                     disabled={validating || playerTag.length < 3}
-                    className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white px-4 rounded-xl flex items-center justify-center active:scale-95"
+                    className="bg-cyan hover:bg-cyan-dark disabled:opacity-50 text-deep-bg px-5 rounded-2xl flex items-center justify-center active:scale-95 transition-all glow-cyan"
                   >
                     {validating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-text-secondary/50 text-center">
                   Find it in Brawl Stars → Profile → tap your tag to copy
                 </p>
               </div>
@@ -198,73 +195,65 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
             {/* Player found */}
             {playerName && !joined && (
               <div className="flex flex-col gap-4">
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div className="brawl-card p-3 flex items-center gap-3" style={{ borderColor: 'rgba(0,255,159,0.3)' }}>
+                  <CheckCircle className="w-5 h-5 text-lime shrink-0" />
                   <div>
-                    <p className="text-sm font-semibold text-white">{playerName}</p>
-                    <p className="text-xs text-gray-400">{playerTag}</p>
+                    <p className="text-sm font-bold text-white">{playerName}</p>
+                    <p className="text-xs text-text-secondary">{playerTag}</p>
                   </div>
                 </div>
 
-                {/* Brawler selection (if not locked) */}
+                {/* Brawler selection */}
                 {!tournament.brawler_lock && (
                   <div className="flex flex-col gap-2">
-                    <p className="text-sm text-gray-400">Select your brawler</p>
+                    <p className="text-sm text-text-secondary">Select your brawler</p>
                     <div className="max-h-48 overflow-y-auto flex flex-col gap-1.5 pr-1">
                       {brawlers.map(b => (
                         <button
                           key={b.name}
                           onClick={() => setSelectedBrawler(b)}
-                          className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${
+                          className={`flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all active:scale-[0.98] ${
                             selectedBrawler?.name === b.name
-                              ? 'bg-violet-500/20 border border-violet-500/40 text-white'
-                              : 'bg-gray-800/60 text-gray-300 active:bg-gray-700'
+                              ? 'bg-gold/10 border-2 border-gold/40 text-white glow-gold'
+                              : 'brawl-card text-text-secondary'
                           }`}
                         >
-                          <span className="font-medium">{b.name}</span>
-                          <span className="text-xs text-gray-400">{b.trophies} trophies</span>
+                          <span className="font-bold">{b.name}</span>
+                          <span className="text-xs text-gold">{b.trophies}</span>
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Selected brawler info (if locked) */}
                 {tournament.brawler_lock && selectedBrawler && (
-                  <div className="bg-gray-800/60 rounded-xl p-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-white">{selectedBrawler.name}</span>
-                    <span className="text-sm text-gray-400">{selectedBrawler.trophies} trophies</span>
+                  <div className="brawl-card p-3 flex items-center justify-between">
+                    <span className="text-sm font-bold text-white">{selectedBrawler.name}</span>
+                    <span className="text-sm text-gold font-bold">{selectedBrawler.trophies}</span>
                   </div>
                 )}
 
-                {/* Join button */}
-                <button
-                  onClick={handleJoin}
-                  disabled={joining || !selectedBrawler}
-                  className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-3.5 rounded-xl font-semibold transition-all active:scale-[0.98]"
-                >
+                <button onClick={handleJoin} disabled={joining || !selectedBrawler} className="btn-primary">
                   {joining ? 'Joining...' : `Join with ${selectedBrawler?.name || '...'}`}
                 </button>
               </div>
             )}
 
-            {/* Not started */}
             {!hasStarted && playerName && (
-              <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 text-center">
-                <p className="text-violet-300 text-sm font-medium">
+              <div className="brawl-card p-4 text-center" style={{ borderColor: 'rgba(0,212,255,0.3)' }}>
+                <p className="text-cyan text-sm font-semibold">
                   Tournament starts on {new Date(tournament.starts_at).toLocaleDateString()}
                 </p>
               </div>
             )}
 
-            {/* Joined */}
             {joined && (
-              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 text-center">
-                <p className="text-emerald-300 font-medium">You're in! Redirecting...</p>
+              <div className="brawl-card p-4 text-center" style={{ borderColor: 'rgba(0,255,159,0.3)' }}>
+                <p className="text-lime font-brawl">You're in! Redirecting...</p>
               </div>
             )}
 
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            {error && <p className="text-magenta text-sm text-center">{error}</p>}
           </div>
         )}
       </div>

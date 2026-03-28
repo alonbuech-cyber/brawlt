@@ -23,31 +23,31 @@ export function PinPad({ length = 4, onComplete, label = 'Enter PIN' }: PinPadPr
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <p className="text-sm text-gray-400">{label}</p>
+      <p className="text-sm text-text-secondary">{label}</p>
       <div className="flex gap-3">
         {Array.from({ length }).map((_, i) => (
           <div
             key={i}
-            className={`w-12 h-14 rounded-xl border-2 flex items-center justify-center text-2xl font-bold transition-all ${
+            className={`w-14 h-16 rounded-2xl border-3 flex items-center justify-center text-2xl font-bold transition-all ${
               i < pin.length
-                ? 'border-violet-500 bg-violet-500/20 text-white'
-                : 'border-gray-600 bg-gray-800/50'
+                ? 'border-gold bg-gold/10 text-gold glow-gold'
+                : 'border-cyan/20 bg-card-bg/80'
             }`}
           >
             {i < pin.length ? '•' : ''}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-3 w-64">
+      <div className="grid grid-cols-3 gap-3 w-72">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((key) => (
           <button
             key={key || 'empty'}
-            className={`h-14 rounded-xl text-xl font-semibold transition-all active:scale-95 ${
+            className={`h-16 rounded-2xl text-xl font-bold transition-all active:scale-95 ${
               key === 'del'
-                ? 'bg-gray-700 text-gray-300 active:bg-gray-600'
+                ? 'bg-card-bg/80 text-magenta border-2 border-magenta/20'
                 : key === ''
                 ? 'invisible'
-                : 'bg-gray-800 text-white active:bg-gray-700'
+                : 'bg-card-bg/80 text-white border-2 border-cyan/10 active:border-cyan/30 active:glow-cyan'
             }`}
             onClick={() => {
               if (key === 'del') handleDelete();
