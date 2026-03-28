@@ -56,8 +56,8 @@ export default function App() {
     );
   }
 
-  // Not logged in
-  if (!session || !profile) {
+  // Not logged in or profile setup incomplete (no passcode set)
+  if (!session || !profile || !profile.passcode_hash) {
     return <LoginScreen onLogin={() => refreshProfile()} />;
   }
 

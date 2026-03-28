@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PinPad } from '@/components/PinPad';
 import { supabase } from '@/lib/supabase';
 
@@ -12,6 +12,29 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [loading, setLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [displayName, setDisplayName] = useState('');
+
+  // Check if user already has a session but needs to finish setup
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from('profiles')
+          .select('passcode_hash, display_name, email')
+          .eq('id', user.id)
+          .single()
+          .then(({ data: profile }) => {
+            if (profile) {
+              setEmail(profile.email || user.email || '');
+              if (!profile.display_name) {
+                setStep('set-name');
+              } else if (!profile.passcode_hash) {
+                setStep('set-pin');
+              }
+            }
+          });
+      }
+    });
+  }, []);
 
   const handleEmailSubmit = async () => {
     if (!email.includes('@') || !email.includes('.')) {
