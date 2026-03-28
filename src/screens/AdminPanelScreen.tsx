@@ -1,28 +1,35 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MetricCard } from '@/components/MetricCard';
 import { StreakDots } from '@/components/StreakDots';
+import { BracketBadge } from '@/components/BracketBadge';
+import { useCountdown } from '@/hooks/useCountdown';
 import {
-  getAdminTournaments, getLeaderboard, getPendingSubmissions,
-  getTodayApproved, approveSubmission, rejectSubmission,
+  getAdminTournaments, getLeaderboard, getTodayApproved,
   disqualifyParticipant, getCurrentDay, getDeadlineToday,
 } from '@/lib/tournaments';
-import { supabase } from '@/lib/supabase';
 import { useRealtimeSubmissions } from '@/hooks/useRealtime';
-import type { Tournament, Submission, LeaderboardEntry } from '@/types/database';
-import { Shield, Check, X, ArrowLeft, AlertTriangle } from 'lucide-react';
+import type { Tournament, LeaderboardEntry } from '@/types/database';
+import { Shield, ArrowLeft, Calendar, Clock, Users, Trophy, Zap, Copy } from 'lucide-react';
 
 interface AdminPanelScreenProps {
   onBack: () => void;
 }
 
+function DeadlineCountdown({ tournament }: { tournament: Tournament }) {
+  const deadline = getDeadlineToday(tournament);
+  const countdown = useCountdown(deadline);
+  return (
+    <span className="text-2xl font-bold text-cyan font-mono" style={{ textShadow: '0 0 15px rgba(0,212,255,0.3)' }}>
+      {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+    </span>
+  );
+}
+
 export function AdminPanelScreen({ onBack }: AdminPanelScreenProps) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
-  const [pending, setPending] = useState<any[]>([]);
   const [todayApproved, setTodayApproved] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
   const [loading, setLoading] = useState(true);
 
   const loadTournaments = useCallback(async () => {
@@ -39,12 +46,10 @@ export function AdminPanelScreen({ onBack }: AdminPanelScreenProps) {
   const loadData = useCallback(async () => {
     if (!selectedTournament) return;
     const day = getCurrentDay(selectedTournament);
-    const [p, a, l] = await Promise.all([
-      getPendingSubmissions(selectedTournament.id),
+    const [a, l] = await Promise.all([
       getTodayApproved(selectedTournament.id, day),
       getLeaderboard(selectedTournament.id),
     ]);
-    setPending(p);
     setTodayApproved(a);
     setLeaderboard(l);
   }, [selectedTournament]);
@@ -52,61 +57,64 @@ export function AdminPanelScreen({ onBack }: AdminPanelScreenProps) {
   useEffect(() => { loadData(); }, [loadData]);
   useRealtimeSubmissions(selectedTournament?.id, loadData);
 
-  const handleApprove = async (subId: string) => {
-    await approveSubmission(subId);
-    await loadData();
-  };
-
-  const handleReject = async () => {
-    if (!rejectTarget || !rejectReason.trim()) return;
-    const t = selectedTournament!;
-    const nextDeadline = getDeadlineToday(t);
-    await rejectSubmission(rejectTarget, rejectReason.trim(), nextDeadline.toISOString());
-    setRejectTarget(null);
-    setRejectReason('');
-    await loadData();
-  };
-
   const handleDisqualify = async (participantId: string) => {
     await disqualifyParticipant(participantId);
     await loadData();
   };
 
-  const getSignedUrl = async (path: string): Promise<string> => {
-    const { data } = await supabase.storage.from('screenshots').createSignedUrl(path, 300);
-    return data?.signedUrl || '';
+  const totalPlayers = leaderboard.length;
+  const activePlayers = leaderboard.filter(e => !e.is_eliminated && !e.disqualified).length;
+  const dnfCount = leaderboard.filter(e => e.is_eliminated || e.disqualified).length;
+  const checkedInToday = todayApproved.length;
+  const notCheckedIn = activePlayers - checkedInToday;
+
+  const currentDay = selectedTournament ? getCurrentDay(selectedTournament) : 0;
+  const startDate = selectedTournament ? new Date(selectedTournament.starts_at) : null;
+  const endDate = startDate && selectedTournament
+    ? new Date(startDate.getTime() + selectedTournament.duration_days * 86400000)
+    : null;
+
+  const getStatus = (): { label: string; badgeClass: string } => {
+    if (!selectedTournament) return { label: '', badgeClass: '' };
+    const now = new Date();
+    if (startDate && now < startDate) return { label: 'Upcoming', badgeClass: 'brawl-badge-cyan' };
+    if (endDate && now > endDate) return { label: 'Ended', badgeClass: 'brawl-badge-magenta' };
+    return { label: `Day ${currentDay} of ${selectedTournament.duration_days}`, badgeClass: 'brawl-badge-lime' };
   };
 
-  const totalPlayers = leaderboard.length;
-  const dnfCount = leaderboard.filter(e => e.is_eliminated || e.disqualified).length;
-
   if (loading) {
-    return <div className="px-4 pt-12"><p className="text-gray-500 text-center">Loading...</p></div>;
+    return (
+      <div className="px-4 pt-12">
+        <div className="flex justify-center py-12">
+          <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
   }
 
+  const status = getStatus();
+
   return (
-    <div className="min-h-screen bg-gray-950 px-4 pt-6 pb-24">
+    <div className="min-h-screen px-4 pt-6 pb-24">
       <div className="max-w-sm mx-auto flex flex-col gap-5">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <button onClick={onBack} className="flex items-center gap-2 text-gray-400">
+          <button onClick={onBack} className="flex items-center gap-2 text-text-secondary">
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
           </button>
           <div className="flex items-center gap-1.5">
-            <Shield className="w-4 h-4 text-violet-400" />
-            <span className="text-xs font-bold text-violet-400">Admin</span>
+            <Shield className="w-4 h-4 text-cyan" />
+            <span className="text-xs font-bold text-cyan">Admin</span>
           </div>
         </div>
-
-        <h1 className="text-xl font-bold text-white">Admin Panel</h1>
 
         {/* Tournament selector */}
         {tournaments.length > 1 && (
           <select
             value={selectedTournament?.id || ''}
             onChange={(e) => setSelectedTournament(tournaments.find(t => t.id === e.target.value) || null)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:border-violet-500 focus:outline-none"
+            className="brawl-input"
           >
             {tournaments.map(t => (
               <option key={t.id} value={t.id}>{t.name}</option>
@@ -114,165 +122,145 @@ export function AdminPanelScreen({ onBack }: AdminPanelScreenProps) {
           </select>
         )}
 
-        {/* Metrics */}
-        <div className="grid grid-cols-3 gap-3">
-          <MetricCard label="Players" value={totalPlayers} />
-          <MetricCard label="Pending" value={pending.length} color="amber" />
-          <MetricCard label="DNF" value={dnfCount} color="red" />
-        </div>
-
-        {/* Review queue */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-400 mb-3">Review Queue</h2>
-          {pending.length === 0 && (
-            <p className="text-gray-600 text-sm text-center py-6">All clear!</p>
-          )}
-          {pending.map((sub: any) => (
-            <SubmissionReviewCard
-              key={sub.id}
-              sub={sub}
-              onApprove={() => handleApprove(sub.id)}
-              onReject={() => setRejectTarget(sub.id)}
-              getSignedUrl={getSignedUrl}
-            />
-          ))}
-        </section>
-
-        {/* Auto-approved today */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-400 mb-3">Today's Check-ins</h2>
-          {todayApproved.length === 0 && (
-            <p className="text-gray-600 text-sm text-center py-4">None yet</p>
-          )}
-          {todayApproved.map((sub: any) => (
-            <div key={sub.id} className="bg-gray-800/60 rounded-xl p-3 mb-2 flex items-center justify-between">
+        {/* Tournament info card */}
+        {selectedTournament && (
+          <div className="brawl-card-gold p-5 flex flex-col gap-4">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-white">{sub.profiles?.display_name}</p>
-                <p className="text-xs text-gray-400">{sub.brawler_detected} • {sub.trophy_count} trophies</p>
+                <h1 className="text-xl font-brawl text-gold">{selectedTournament.name}</h1>
+                <span className={`brawl-badge ${status.badgeClass} mt-1`}>{status.label}</span>
               </div>
+              <BracketBadge bracket={selectedTournament.bracket_name} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center gap-2 text-text-secondary">
+                <Calendar className="w-4 h-4 text-cyan/60" />
+                {startDate?.toLocaleDateString()} – {endDate?.toLocaleDateString()}
+              </div>
+              <div className="flex items-center gap-2 text-text-secondary">
+                <Clock className="w-4 h-4 text-cyan/60" />
+                {selectedTournament.daily_deadline_hour}:00 UTC daily
+              </div>
+              {selectedTournament.brawler_lock && (
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Trophy className="w-4 h-4 text-gold/60" />
+                  {selectedTournament.brawler_lock}
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-text-secondary">
+                <Users className="w-4 h-4 text-cyan/60" />
+                {totalPlayers}{selectedTournament.max_participants ? `/${selectedTournament.max_participants}` : ''} players
+              </div>
+            </div>
+
+            {/* Invite code */}
+            <div className="flex items-center justify-between bg-deep-bg/60 rounded-xl px-3 py-2">
+              <span className="text-sm font-mono font-bold text-gold tracking-widest">{selectedTournament.invite_code}</span>
               <button
-                onClick={() => setRejectTarget(sub.id)}
-                className="text-xs text-amber-400 border border-amber-400/30 px-3 py-1.5 rounded-lg"
+                onClick={() => navigator.clipboard.writeText(selectedTournament.invite_code)}
+                className="text-text-secondary/50 hover:text-white p-1"
               >
-                Override
+                <Copy className="w-4 h-4" />
               </button>
             </div>
-          ))}
-        </section>
-
-        {/* All participants */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-400 mb-3">All Participants</h2>
-          {leaderboard.map((entry) => (
-            <div key={entry.participant_id} className="bg-gray-800/60 rounded-xl p-3 mb-2 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-300">
-                {entry.display_name.slice(0, 2).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{entry.display_name}</p>
-                <StreakDots
-                  dots={entry.submissions}
-                  currentDay={selectedTournament ? getCurrentDay(selectedTournament) : 1}
-                  size="sm"
-                />
-              </div>
-              {!entry.disqualified && (
-                <button
-                  onClick={() => {
-                    if (confirm(`Disqualify ${entry.display_name}?`)) {
-                      handleDisqualify(entry.participant_id);
-                    }
-                  }}
-                  className="text-xs text-red-400 border border-red-400/30 px-2.5 py-1.5 rounded-lg"
-                >
-                  DQ
-                </button>
-              )}
-              {entry.disqualified && (
-                <span className="text-xs text-red-400 font-bold">DQ'd</span>
-              )}
-            </div>
-          ))}
-        </section>
-
-        {/* Reject bottom sheet */}
-        {rejectTarget && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={() => setRejectTarget(null)}>
-            <div className="bg-gray-900 rounded-t-3xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-              <h3 className="text-lg font-bold text-white mb-4">Reject Submission</h3>
-              <textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Reason for rejection..."
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 resize-none h-24"
-              />
-              <div className="flex gap-3 mt-4">
-                <button onClick={() => setRejectTarget(null)} className="flex-1 bg-gray-800 text-white py-3 rounded-xl font-semibold">
-                  Cancel
-                </button>
-                <button
-                  onClick={handleReject}
-                  disabled={!rejectReason.trim()}
-                  className="flex-1 bg-red-600 disabled:opacity-50 text-white py-3 rounded-xl font-semibold"
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
 
-function SubmissionReviewCard({
-  sub,
-  onApprove,
-  onReject,
-  getSignedUrl,
-}: {
-  sub: any;
-  onApprove: () => void;
-  onReject: () => void;
-  getSignedUrl: (path: string) => Promise<string>;
-}) {
-  const [imageUrl, setImageUrl] = useState('');
-  const isFailed = sub.ocr_status === 'ocr_failed';
-
-  useEffect(() => {
-    if (sub.image_url) {
-      getSignedUrl(sub.image_url).then(setImageUrl);
-    }
-  }, [sub.image_url, getSignedUrl]);
-
-  return (
-    <div className={`bg-gray-800/60 rounded-xl p-3 mb-2 ${isFailed ? 'border border-amber-500/40' : ''}`}>
-      <div className="flex gap-3">
-        {imageUrl && (
-          <img src={imageUrl} alt="Screenshot" className="w-20 h-20 rounded-lg object-cover" />
-        )}
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-white">{sub.profiles?.display_name}</p>
-            {isFailed && <AlertTriangle className="w-4 h-4 text-amber-400" />}
-            {!sub.image_url && (
-              <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold">API</span>
-            )}
+        {/* Deadline countdown */}
+        {selectedTournament && currentDay > 0 && (
+          <div className="brawl-card p-4 text-center">
+            <p className="text-xs text-text-secondary mb-2">Next deadline</p>
+            <DeadlineCountdown tournament={selectedTournament} />
           </div>
-          <p className="text-xs text-gray-400">
-            {sub.brawler_detected || '?'} • {sub.trophy_count ?? 'N/A'} trophies • Day {sub.day_number}
-          </p>
-          {isFailed && <p className="text-xs text-amber-400 mt-1">OCR failed</p>}
+        )}
+
+        {/* Metrics */}
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard label="Active players" value={activePlayers} color="green" />
+          <MetricCard label="Eliminated / DQ" value={dnfCount} color="red" />
         </div>
-      </div>
-      <div className="flex gap-2 mt-3">
-        <button onClick={onApprove} className="flex-1 bg-emerald-600/20 text-emerald-400 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5">
-          <Check className="w-4 h-4" /> Approve
-        </button>
-        <button onClick={onReject} className="flex-1 bg-red-600/20 text-red-400 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5">
-          <X className="w-4 h-4" /> Reject
-        </button>
+
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard label="Checked in today" value={checkedInToday} color="amber" />
+          <MetricCard label="Not checked in" value={notCheckedIn > 0 ? notCheckedIn : 0} />
+        </div>
+
+        {/* Today's check-ins */}
+        <section>
+          <h2 className="text-sm font-semibold text-text-secondary mb-3 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-gold" />
+            Today's Check-ins (Day {currentDay})
+          </h2>
+          {todayApproved.length === 0 && (
+            <p className="text-text-secondary/40 text-sm text-center py-4">No check-ins yet today</p>
+          )}
+          {todayApproved.map((sub: any) => (
+            <div key={sub.id} className="brawl-card p-3 mb-2 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-white">{sub.profiles?.display_name}</p>
+                <p className="text-xs text-text-secondary">{sub.brawler_detected} • <span className="text-gold">{sub.trophy_count}</span> trophies</p>
+              </div>
+              <span className="brawl-badge-lime text-[10px]">Verified</span>
+            </div>
+          ))}
+        </section>
+
+        {/* Leaderboard */}
+        <section>
+          <h2 className="text-sm font-semibold text-text-secondary mb-3">Leaderboard</h2>
+          {leaderboard.map((entry) => {
+            const isDnf = entry.is_eliminated || entry.disqualified;
+            return (
+              <div key={entry.participant_id} className={`brawl-card p-3 mb-2 flex items-center gap-3 ${isDnf ? 'opacity-40' : ''}`}>
+                <span className={`text-lg font-brawl w-8 text-center ${
+                  entry.rank === 1 ? 'text-gold' : entry.rank === 2 ? 'text-gray-300' : entry.rank === 3 ? 'text-amber-600' : 'text-text-secondary/50'
+                }`}>
+                  {entry.rank}
+                </span>
+                <div className="w-8 h-8 rounded-full bg-card-bg border border-cyan/20 flex items-center justify-center text-xs font-bold text-text-secondary">
+                  {entry.display_name.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-white truncate">{entry.display_name}</p>
+                    {isDnf && <span className="brawl-badge-magenta text-[10px]">
+                      {entry.disqualified ? 'DQ' : 'DNF'}
+                    </span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-secondary/60">{entry.brawler_name}</span>
+                    <StreakDots
+                      dots={entry.submissions}
+                      currentDay={currentDay}
+                      size="sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-base font-bold ${entry.net_gain >= 0 ? 'text-lime' : 'text-magenta'}`}>
+                    {entry.net_gain >= 0 ? '+' : ''}{entry.net_gain}
+                  </span>
+                  {!entry.disqualified && !entry.is_eliminated && (
+                    <button
+                      onClick={() => {
+                        if (confirm(`Disqualify ${entry.display_name}?`)) {
+                          handleDisqualify(entry.participant_id);
+                        }
+                      }}
+                      className="text-[10px] text-magenta/60 border border-magenta/20 px-2 py-1 rounded-lg hover:text-magenta hover:border-magenta/40"
+                    >
+                      DQ
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {leaderboard.length === 0 && (
+            <p className="text-text-secondary/40 text-sm text-center py-6">No participants yet</p>
+          )}
+        </section>
       </div>
     </div>
   );
