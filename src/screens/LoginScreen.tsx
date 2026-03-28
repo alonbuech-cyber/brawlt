@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PinPad } from '@/components/PinPad';
 import { supabase } from '@/lib/supabase';
-import { Trophy } from 'lucide-react';
 
 type LoginStep = 'email' | 'pin' | 'otp' | 'set-pin' | 'set-name';
 
@@ -173,11 +172,8 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
         {/* Logo */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/25">
-            <Trophy className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">BrawlT</h1>
+        <div className="flex flex-col items-center gap-1">
+          <img src="/logo.jpg" alt="BrawlT" className="w-40 h-40 object-contain" />
           <p className="text-sm text-gray-400">Brawl Stars Tournaments</p>
         </div>
 
