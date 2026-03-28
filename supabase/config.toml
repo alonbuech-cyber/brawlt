@@ -1,0 +1,5 @@
+[functions.fetch-trophies]
+verify_jwt = false
+
+[functions.process-screenshot]
+verify_jwt = false

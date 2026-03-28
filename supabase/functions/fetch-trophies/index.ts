@@ -38,15 +38,18 @@ serve(async (req) => {
     const { participant_id, tournament_id, day_number, player_tag, action } = await req.json();
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch player data from Brawl Stars API
-    const encodedTag = encodeURIComponent(player_tag);
+    // Fetch player data from Brawl Stars API via RoyaleAPI proxy
+    const cleanTag = player_tag.startsWith('#') ? player_tag : `#${player_tag}`;
+    const encodedTag = encodeURIComponent(cleanTag);
+    const apiUrl = `https://bsproxy.royaleapi.dev/v1/players/${encodedTag}`;
+    console.log("Fetching player:", { raw_tag: player_tag, clean_tag: cleanTag, encoded: encodedTag, url: apiUrl });
     const bsResponse = await fetch(
-      `https://api.brawlstars.com/v1/players/${encodedTag}`,
+      apiUrl,
       { headers: { Authorization: `Bearer ${BRAWLSTARS_API_KEY}` } }
     );
 
     const bsText = await bsResponse.text();
-    console.log("BS API status:", bsResponse.status, "body:", bsText);
+    console.log("BS API status:", bsResponse.status, "body:", bsText.substring(0, 500));
 
     if (!bsResponse.ok) {
       return jsonResponse({ error: "Could not fetch player data", status: bsResponse.status, details: bsText }, 400);
