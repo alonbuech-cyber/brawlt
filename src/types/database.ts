@@ -3,6 +3,7 @@ export interface Profile {
   email: string;
   display_name: string | null;
   passcode_hash: string | null;
+  player_tag: string | null;
   is_admin: boolean;
   created_at: string;
 }
@@ -44,7 +45,7 @@ export interface Submission {
   participant_id: string;
   tournament_id: string;
   day_number: number;
-  image_url: string;
+  image_url: string | null;
   trophy_count: number | null;
   brawler_detected: string | null;
   ocr_status: OcrStatus;

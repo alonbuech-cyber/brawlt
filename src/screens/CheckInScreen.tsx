@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MetricCard } from '@/components/MetricCard';
 import { StreakDots } from '@/components/StreakDots';
-import { UploadZone } from '@/components/UploadZone';
 import { useCountdown } from '@/hooks/useCountdown';
-import { getCurrentDay, getDeadlineToday, getMySubmissions, submitScreenshot, getLeaderboard } from '@/lib/tournaments';
+import { getCurrentDay, getDeadlineToday, getMySubmissions, checkIn, getLeaderboard } from '@/lib/tournaments';
+import { supabase } from '@/lib/supabase';
 import type { Tournament, Participant, Submission, SubmissionDot } from '@/types/database';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Loader2, Zap } from 'lucide-react';
 
 interface CheckInScreenProps {
   tournament: Tournament;
@@ -16,6 +16,10 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [rank, setRank] = useState<number>(0);
   const [netGain, setNetGain] = useState<number>(0);
+  const [playerTag, setPlayerTag] = useState<string | null>(null);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [checkInResult, setCheckInResult] = useState<{ trophy_count: number; brawler_name: string } | null>(null);
+  const [error, setError] = useState('');
   const currentDay = getCurrentDay(tournament);
   const deadline = getDeadlineToday(tournament);
   const countdown = useCountdown(deadline);
@@ -36,8 +40,45 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleUpload = async (file: File) => {
-    await submitScreenshot(tournament.id, participant.id, currentDay, file);
+  // Load player tag from profile
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from('profiles')
+          .select('player_tag')
+          .eq('id', user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.player_tag) setPlayerTag(data.player_tag);
+          });
+      }
+    });
+  }, []);
+
+  const handleCheckIn = async () => {
+    if (!playerTag) {
+      setError('Player tag not found. Please rejoin the tournament.');
+      return;
+    }
+    setCheckingIn(true);
+    setError('');
+
+    const { trophy_count, brawler_name, error: err } = await checkIn(
+      tournament.id,
+      participant.id,
+      currentDay,
+      playerTag
+    );
+
+    if (err) {
+      setError(err);
+      setCheckingIn(false);
+      return;
+    }
+
+    setCheckInResult({ trophy_count: trophy_count!, brawler_name: brawler_name! });
+    setCheckingIn(false);
     await loadData();
   };
 
@@ -46,10 +87,6 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
     const sub = submissions.find(s => s.day_number === day);
     return { day_number: day, ocr_status: sub?.ocr_status || null };
   });
-
-  const isRejected = todaySub?.ocr_status === 'rejected';
-  const canResubmit = isRejected && todaySub?.resubmit_allowed_until &&
-    new Date(todaySub.resubmit_allowed_until) > new Date();
 
   return (
     <div className="px-4 pt-6 pb-24">
@@ -85,20 +122,37 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
           <StreakDots dots={dots} currentDay={currentDay} />
         </div>
 
-        {/* Upload / Status */}
-        {!todaySub && (
-          <UploadZone onUpload={handleUpload} />
+        {/* Check-in button */}
+        {!todaySub && !checkInResult && (
+          <button
+            onClick={handleCheckIn}
+            disabled={checkingIn}
+            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-4 rounded-2xl font-semibold text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+          >
+            {checkingIn ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Fetching trophies...
+              </>
+            ) : (
+              <>
+                <Zap className="w-5 h-5" />
+                Check In — Day {currentDay}
+              </>
+            )}
+          </button>
         )}
 
-        {todaySub?.ocr_status === 'approved' && (
+        {/* Check-in success */}
+        {(todaySub?.ocr_status === 'approved' || checkInResult) && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 flex flex-col items-center gap-3">
             <CheckCircle className="w-10 h-10 text-emerald-400" />
-            <p className="text-emerald-300 font-semibold">Submitted!</p>
+            <p className="text-emerald-300 font-semibold">Checked in!</p>
             <div className="text-sm text-gray-300 text-center space-y-1">
-              <p>Brawler: {todaySub.brawler_detected || '—'}</p>
-              <p>Trophies: {todaySub.trophy_count ?? '—'}</p>
+              <p>Brawler: {checkInResult?.brawler_name || todaySub?.brawler_detected || '—'}</p>
+              <p>Trophies: {checkInResult?.trophy_count ?? todaySub?.trophy_count ?? '—'}</p>
               <p className="text-xs text-gray-500">
-                {new Date(todaySub.submitted_at).toLocaleTimeString()}
+                Verified via Brawl Stars API
               </p>
             </div>
             {currentDay < tournament.duration_days && (
@@ -109,46 +163,7 @@ export function CheckInScreen({ tournament, participant }: CheckInScreenProps) {
           </div>
         )}
 
-        {todaySub?.ocr_status === 'pending' && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-amber-400" />
-            <p className="text-amber-300 font-semibold">Submitted — awaiting admin review</p>
-            <p className="text-xs text-gray-400">Your previous day's score is held until review</p>
-          </div>
-        )}
-
-        {isRejected && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 flex flex-col items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
-            <p className="text-red-300 font-semibold">Submission rejected</p>
-            {todaySub.rejection_reason && (
-              <p className="text-sm text-gray-300">{todaySub.rejection_reason}</p>
-            )}
-            {canResubmit && (
-              <>
-                <p className="text-xs text-gray-400">
-                  Resubmit before {new Date(todaySub.resubmit_allowed_until!).toLocaleString()}
-                </p>
-                <UploadZone onUpload={handleUpload} />
-              </>
-            )}
-          </div>
-        )}
-
-        {todaySub?.ocr_status === 'ocr_failed' && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-amber-400" />
-            <p className="text-amber-300 font-semibold">Could not read screenshot</p>
-            {todaySub.resubmit_allowed_until && new Date(todaySub.resubmit_allowed_until) > new Date() && (
-              <>
-                <p className="text-xs text-gray-400">
-                  Resubmit before {new Date(todaySub.resubmit_allowed_until).toLocaleString()}
-                </p>
-                <UploadZone onUpload={handleUpload} />
-              </>
-            )}
-          </div>
-        )}
+        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
       </div>
     </div>
   );

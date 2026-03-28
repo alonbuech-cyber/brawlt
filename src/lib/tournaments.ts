@@ -57,12 +57,34 @@ export async function createTournament(tournament: Omit<Tournament, 'id' | 'invi
   return { tournament: data, error: null };
 }
 
+export async function validatePlayerTag(
+  playerTag: string
+): Promise<{ player_name: string; brawlers: { name: string; trophies: number }[]; error: string | null }> {
+  const { data, error } = await supabase.functions.invoke('fetch-trophies', {
+    body: { player_tag: playerTag, action: 'validate' },
+  });
+
+  if (error || !data?.success) {
+    return { player_name: '', brawlers: [], error: data?.error || error?.message || 'Could not validate player tag' };
+  }
+
+  return { player_name: data.player_name, brawlers: data.brawlers, error: null };
+}
+
 export async function joinTournament(
   tournamentId: string,
-  brawlerName: string
+  brawlerName: string,
+  playerTag: string,
+  baselineTrophies: number | null
 ): Promise<{ participant: Participant | null; error: string | null }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { participant: null, error: 'Not authenticated' };
+
+  // Save player tag to profile
+  await supabase
+    .from('profiles')
+    .update({ player_tag: playerTag })
+    .eq('id', user.id);
 
   const { data, error } = await supabase
     .from('participants')
@@ -70,6 +92,7 @@ export async function joinTournament(
       tournament_id: tournamentId,
       profile_id: user.id,
       brawler_name: brawlerName,
+      baseline_trophies: baselineTrophies,
     })
     .select()
     .single();
@@ -118,46 +141,27 @@ export async function getMyActiveTournament(): Promise<{ tournament: Tournament;
   return null;
 }
 
-export async function submitScreenshot(
+export async function checkIn(
   tournamentId: string,
   participantId: string,
   dayNumber: number,
-  file: File
-): Promise<{ submission: Submission | null; error: string | null }> {
-  const path = `${tournamentId}/${participantId}/day${dayNumber}.jpg`;
-
-  // Upload to storage
-  const { error: uploadError } = await supabase.storage
-    .from('screenshots')
-    .upload(path, file, { upsert: true });
-
-  if (uploadError) return { submission: null, error: uploadError.message };
-
-  // Create submission record
-  const { data, error } = await supabase
-    .from('submissions')
-    .upsert({
+  playerTag: string
+): Promise<{ trophy_count: number | null; brawler_name: string | null; error: string | null }> {
+  const { data, error } = await supabase.functions.invoke('fetch-trophies', {
+    body: {
       participant_id: participantId,
       tournament_id: tournamentId,
       day_number: dayNumber,
-      image_url: path,
-      ocr_status: 'pending',
-    }, { onConflict: 'participant_id,day_number' })
-    .select()
-    .single();
+      player_tag: playerTag,
+      action: 'checkin',
+    },
+  });
 
-  if (error) return { submission: null, error: error.message };
-
-  // Trigger edge function
-  try {
-    await supabase.functions.invoke('process-screenshot', {
-      body: { submission_id: data.id, image_path: path, tournament_id: tournamentId },
-    });
-  } catch {
-    // Edge function runs async, non-blocking
+  if (error || !data?.success) {
+    return { trophy_count: null, brawler_name: null, error: data?.error || error?.message || 'Check-in failed' };
   }
 
-  return { submission: data, error: null };
+  return { trophy_count: data.trophy_count, brawler_name: data.brawler_name, error: null };
 }
 
 export async function getMySubmissions(participantId: string): Promise<Submission[]> {

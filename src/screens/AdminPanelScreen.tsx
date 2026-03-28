@@ -140,7 +140,7 @@ export function AdminPanelScreen({ onBack }: AdminPanelScreenProps) {
 
         {/* Auto-approved today */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-400 mb-3">Auto-Approved Today</h2>
+          <h2 className="text-sm font-semibold text-gray-400 mb-3">Today's Check-ins</h2>
           {todayApproved.length === 0 && (
             <p className="text-gray-600 text-sm text-center py-4">None yet</p>
           )}
@@ -241,7 +241,9 @@ function SubmissionReviewCard({
   const isFailed = sub.ocr_status === 'ocr_failed';
 
   useEffect(() => {
-    getSignedUrl(sub.image_url).then(setImageUrl);
+    if (sub.image_url) {
+      getSignedUrl(sub.image_url).then(setImageUrl);
+    }
   }, [sub.image_url, getSignedUrl]);
 
   return (
@@ -254,6 +256,9 @@ function SubmissionReviewCard({
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-white">{sub.profiles?.display_name}</p>
             {isFailed && <AlertTriangle className="w-4 h-4 text-amber-400" />}
+            {!sub.image_url && (
+              <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold">API</span>
+            )}
           </div>
           <p className="text-xs text-gray-400">
             {sub.brawler_detected || '?'} • {sub.trophy_count ?? 'N/A'} trophies • Day {sub.day_number}
