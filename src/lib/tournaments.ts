@@ -139,13 +139,14 @@ export async function getMyActiveTournament(): Promise<{ tournament: Tournament;
 
   if (!participants || participants.length === 0) return null;
 
-  // Find active tournament (started, not yet ended)
+  // Find active or upcoming tournament the user has joined
   const now = new Date();
   for (const p of participants) {
     const t = (p as any).tournaments as Tournament;
     const start = new Date(t.starts_at);
     const end = new Date(start.getTime() + t.duration_days * 86400000);
-    if (now >= start && now <= end) {
+    // Show if tournament hasn't ended yet (includes upcoming + in-progress)
+    if (now <= end) {
       return { tournament: t, participant: p };
     }
   }
