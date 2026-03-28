@@ -3,7 +3,7 @@ import { CodeInput } from '@/components/CodeInput';
 import { BracketBadge } from '@/components/BracketBadge';
 import { fetchTournamentByCode, joinTournament, validatePlayerTag, checkIn, getParticipantCount, getCurrentDay } from '@/lib/tournaments';
 import type { Tournament } from '@/types/database';
-import { Calendar, Clock, Users, Lock, Search, CheckCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, Users, Lock, Search, CheckCircle, Loader2, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface JoinScreenProps {
   onJoined: () => void;
@@ -25,6 +25,7 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
   const [validating, setValidating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleCodeComplete = async (code: string) => {
     setError('');
@@ -186,9 +187,62 @@ export function JoinScreen({ onJoined }: JoinScreenProps) {
                     {validating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-text-secondary/50 text-center">
-                  Find it in Brawl Stars → Profile → tap your tag to copy
-                </p>
+
+                {/* How to find your tag */}
+                <button
+                  onClick={() => setShowHelp(!showHelp)}
+                  className="flex items-center justify-center gap-1.5 text-xs text-cyan mx-auto"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  Where do I find my tag?
+                  {showHelp ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+
+                {showHelp && (
+                  <div className="brawl-card p-4 flex flex-col gap-4">
+                    {/* Step 1 */}
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gold/20 text-gold flex items-center justify-center text-sm font-brawl shrink-0">1</div>
+                      <div>
+                        <p className="text-sm text-white font-semibold">Open Brawl Stars</p>
+                        <p className="text-xs text-text-secondary">Tap your <span className="text-gold font-semibold">player name</span> or <span className="text-gold font-semibold">profile icon</span> in the top-left corner of the main screen</p>
+                      </div>
+                    </div>
+
+                    {/* Visual mockup of BS profile area */}
+                    <div className="bg-deep-bg rounded-xl p-3 border border-cyan/10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-10 h-10 rounded-lg bg-cyan/20 flex items-center justify-center text-lg">👤</div>
+                        <div>
+                          <p className="text-sm font-bold text-white">YourName</p>
+                          <p className="text-xs font-mono text-gold">#ABCD1234 ← This is your tag!</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 bg-gold/10 rounded-lg px-2 py-1.5 border border-gold/20">
+                        <span className="text-[10px] text-gold">🏆</span>
+                        <span className="text-xs text-text-secondary">Total Trophies: 15,234</span>
+                      </div>
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gold/20 text-gold flex items-center justify-center text-sm font-brawl shrink-0">2</div>
+                      <div>
+                        <p className="text-sm text-white font-semibold">Find your tag</p>
+                        <p className="text-xs text-text-secondary">Your tag is shown right below your name. It starts with <span className="text-gold font-mono font-bold">#</span> followed by letters and numbers</p>
+                      </div>
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gold/20 text-gold flex items-center justify-center text-sm font-brawl shrink-0">3</div>
+                      <div>
+                        <p className="text-sm text-white font-semibold">Copy it</p>
+                        <p className="text-xs text-text-secondary">Tap the tag to copy it, then paste it here. Only these characters are used: <span className="text-cyan font-mono font-bold">0 2 8 9 P Y L Q G R J C U V</span></p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
