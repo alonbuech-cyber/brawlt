@@ -164,7 +164,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
         {/* Logo */}
         <div className="flex flex-col items-center gap-1">
-          <img src="/logo.png" alt="BrawlT" className="w-44 h-44 object-contain drop-shadow-[0_0_30px_rgba(255,204,0,0.3)] rounded-3xl" style={{ mixBlendMode: 'lighten' }} />
+          <img src="/logo.png" alt="BrawlT" className="w-44 h-44 object-contain drop-shadow-[0_0_30px_rgba(255,204,0,0.3)]" />
           <p className="text-sm text-text-secondary">Brawl Stars Tournaments</p>
         </div>
 
