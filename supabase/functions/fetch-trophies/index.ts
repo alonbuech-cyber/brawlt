@@ -45,12 +45,19 @@ serve(async (req) => {
       { headers: { Authorization: `Bearer ${BRAWLSTARS_API_KEY}` } }
     );
 
+    const bsText = await bsResponse.text();
+    console.log("BS API status:", bsResponse.status, "body:", bsText);
+
     if (!bsResponse.ok) {
-      const errText = await bsResponse.text();
-      return jsonResponse({ error: "Could not fetch player data", details: errText }, 400);
+      return jsonResponse({ error: "Could not fetch player data", status: bsResponse.status, details: bsText }, 400);
     }
 
-    const playerData: BrawlStarsPlayer = await bsResponse.json();
+    let playerData: BrawlStarsPlayer;
+    try {
+      playerData = JSON.parse(bsText);
+    } catch {
+      return jsonResponse({ error: "Invalid response from Brawl Stars API", raw: bsText }, 500);
+    }
 
     // ACTION: validate
     if (action === "validate") {

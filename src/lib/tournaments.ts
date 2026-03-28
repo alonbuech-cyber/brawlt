@@ -60,15 +60,26 @@ export async function createTournament(tournament: Omit<Tournament, 'id' | 'invi
 export async function validatePlayerTag(
   playerTag: string
 ): Promise<{ player_name: string; brawlers: { name: string; trophies: number }[]; error: string | null }> {
-  const { data, error } = await supabase.functions.invoke('fetch-trophies', {
-    body: { player_tag: playerTag, action: 'validate' },
-  });
+  try {
+    const { data, error } = await supabase.functions.invoke('fetch-trophies', {
+      body: { player_tag: playerTag, action: 'validate' },
+    });
 
-  if (error || !data?.success) {
-    return { player_name: '', brawlers: [], error: data?.error || error?.message || 'Could not validate player tag' };
+    console.log('validatePlayerTag response:', { data, error });
+
+    if (error) {
+      return { player_name: '', brawlers: [], error: error.message || 'Edge function error' };
+    }
+
+    if (!data?.success) {
+      return { player_name: '', brawlers: [], error: data?.error || 'Could not validate player tag' };
+    }
+
+    return { player_name: data.player_name, brawlers: data.brawlers, error: null };
+  } catch (e: any) {
+    console.error('validatePlayerTag catch:', e);
+    return { player_name: '', brawlers: [], error: e.message || 'Network error' };
   }
-
-  return { player_name: data.player_name, brawlers: data.brawlers, error: null };
 }
 
 export async function joinTournament(
