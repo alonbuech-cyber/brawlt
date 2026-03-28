@@ -5,6 +5,18 @@ const BRAWLSTARS_API_KEY = Deno.env.get("BRAWLSTARS_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 interface BrawlerData {
   name: string;
   trophies: number;
@@ -18,6 +30,10 @@ interface BrawlStarsPlayer {
 }
 
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const { participant_id, tournament_id, day_number, player_tag, action } = await req.json();
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -26,40 +42,31 @@ serve(async (req) => {
     const encodedTag = encodeURIComponent(player_tag);
     const bsResponse = await fetch(
       `https://api.brawlstars.com/v1/players/${encodedTag}`,
-      {
-        headers: { Authorization: `Bearer ${BRAWLSTARS_API_KEY}` },
-      }
+      { headers: { Authorization: `Bearer ${BRAWLSTARS_API_KEY}` } }
     );
 
     if (!bsResponse.ok) {
       const errText = await bsResponse.text();
-      return new Response(
-        JSON.stringify({ error: "Could not fetch player data", details: errText }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: "Could not fetch player data", details: errText }, 400);
     }
 
     const playerData: BrawlStarsPlayer = await bsResponse.json();
 
-    // ACTION: validate — just validate tag and return player info
+    // ACTION: validate
     if (action === "validate") {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          player_name: playerData.name,
-          total_trophies: playerData.trophies,
-          brawlers: playerData.brawlers.map((b) => ({
-            name: b.name,
-            trophies: b.trophies,
-          })),
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonResponse({
+        success: true,
+        player_name: playerData.name,
+        total_trophies: playerData.trophies,
+        brawlers: playerData.brawlers.map((b) => ({
+          name: b.name,
+          trophies: b.trophies,
+        })),
+      });
     }
 
-    // ACTION: checkin — fetch trophies and create/update submission
+    // ACTION: checkin
     if (action === "checkin") {
-      // Get participant's brawler name
       const { data: participant } = await supabase
         .from("participants")
         .select("brawler_name, baseline_trophies")
@@ -67,28 +74,20 @@ serve(async (req) => {
         .single();
 
       if (!participant) {
-        return new Response(
-          JSON.stringify({ error: "Participant not found" }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "Participant not found" }, 404);
       }
 
-      // Find the brawler in the API response
       const brawler = playerData.brawlers.find(
         (b) => b.name.toLowerCase() === participant.brawler_name.toLowerCase()
       );
 
       if (!brawler) {
-        return new Response(
-          JSON.stringify({
-            error: `Brawler "${participant.brawler_name}" not found on this account`,
-          }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
+        return jsonResponse({
+          error: `Brawler "${participant.brawler_name}" not found on this account`,
+        }, 400);
       }
 
-      // Upsert submission
-      const { data: submission, error: subError } = await supabase
+      const { error: subError } = await supabase
         .from("submissions")
         .upsert(
           {
@@ -109,13 +108,9 @@ serve(async (req) => {
         .single();
 
       if (subError) {
-        return new Response(
-          JSON.stringify({ error: subError.message }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: subError.message }, 500);
       }
 
-      // Set baseline on Day 1
       if (day_number === 1 && participant.baseline_trophies === null) {
         await supabase
           .from("participants")
@@ -123,18 +118,15 @@ serve(async (req) => {
           .eq("id", participant_id);
       }
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          trophy_count: brawler.trophies,
-          brawler_name: brawler.name,
-          baseline_set: day_number === 1 && participant.baseline_trophies === null,
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonResponse({
+        success: true,
+        trophy_count: brawler.trophies,
+        brawler_name: brawler.name,
+        baseline_set: day_number === 1 && participant.baseline_trophies === null,
+      });
     }
 
-    // ACTION: join — validate brawler + trophy range for tournament
+    // ACTION: join
     if (action === "join") {
       const { data: tournament } = await supabase
         .from("tournaments")
@@ -143,13 +135,9 @@ serve(async (req) => {
         .single();
 
       if (!tournament) {
-        return new Response(
-          JSON.stringify({ error: "Tournament not found" }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "Tournament not found" }, 404);
       }
 
-      // If brawler_lock is set, check that player has it
       const brawlerName = tournament.brawler_lock || null;
       let targetBrawler: BrawlerData | undefined;
 
@@ -158,63 +146,39 @@ serve(async (req) => {
           (b) => b.name.toLowerCase() === brawlerName.toLowerCase()
         );
         if (!targetBrawler) {
-          return new Response(
-            JSON.stringify({
-              error: `You don't have the brawler "${brawlerName}" on this account`,
-            }),
-            { status: 400, headers: { "Content-Type": "application/json" } }
-          );
+          return jsonResponse({
+            error: `You don't have the brawler "${brawlerName}" on this account`,
+          }, 400);
         }
-      }
 
-      // Validate trophy range if brawler is locked
-      if (targetBrawler) {
         if (targetBrawler.trophies < tournament.trophy_min) {
-          return new Response(
-            JSON.stringify({
-              error: `${targetBrawler.name} has ${targetBrawler.trophies} trophies, minimum is ${tournament.trophy_min}`,
-            }),
-            { status: 400, headers: { "Content-Type": "application/json" } }
-          );
+          return jsonResponse({
+            error: `${targetBrawler.name} has ${targetBrawler.trophies} trophies, minimum is ${tournament.trophy_min}`,
+          }, 400);
         }
-        if (
-          tournament.trophy_max !== null &&
-          targetBrawler.trophies > tournament.trophy_max
-        ) {
-          return new Response(
-            JSON.stringify({
-              error: `${targetBrawler.name} has ${targetBrawler.trophies} trophies, maximum is ${tournament.trophy_max}`,
-            }),
-            { status: 400, headers: { "Content-Type": "application/json" } }
-          );
+        if (tournament.trophy_max !== null && targetBrawler.trophies > tournament.trophy_max) {
+          return jsonResponse({
+            error: `${targetBrawler.name} has ${targetBrawler.trophies} trophies, maximum is ${tournament.trophy_max}`,
+          }, 400);
         }
       }
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          player_name: playerData.name,
-          brawlers: playerData.brawlers.map((b) => ({
-            name: b.name,
-            trophies: b.trophies,
-          })),
-          validated_brawler: targetBrawler
-            ? { name: targetBrawler.name, trophies: targetBrawler.trophies }
-            : null,
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonResponse({
+        success: true,
+        player_name: playerData.name,
+        brawlers: playerData.brawlers.map((b) => ({
+          name: b.name,
+          trophies: b.trophies,
+        })),
+        validated_brawler: targetBrawler
+          ? { name: targetBrawler.name, trophies: targetBrawler.trophies }
+          : null,
+      });
     }
 
-    return new Response(
-      JSON.stringify({ error: "Invalid action. Use: validate, join, checkin" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ error: "Invalid action. Use: validate, join, checkin" }, 400);
   } catch (error) {
     console.error("Edge function error:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });
