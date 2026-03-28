@@ -24,7 +24,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if user exists
+    // Check if user exists with a passcode set
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, passcode_hash')
@@ -32,10 +32,10 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
       .single();
 
     if (profile?.passcode_hash) {
-      // Existing user with passcode, go to PIN
+      // Existing user with passcode — go straight to PIN
       setStep('pin');
     } else {
-      // New user or no passcode, send email OTP
+      // New user or no passcode — send email OTP for signup
       const { error: otpError } = await supabase.auth.signInWithOtp({ email: normalizedEmail });
       if (otpError) {
         setError(otpError.message);
@@ -52,26 +52,20 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     setLoading(true);
     const normalizedEmail = email.trim().toLowerCase();
 
-    const { data, error: rpcError } = await supabase.rpc('verify_passcode', {
-      p_email: normalizedEmail,
-      p_passcode: pin,
+    // Sign in with email + password (PIN is the password)
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password: pin,
     });
 
-    if (rpcError || !data?.valid) {
+    if (signInError) {
       setError('Invalid passcode');
       setLoading(false);
       return;
     }
 
-    // Passcode verified — send email OTP for session
-    const { error: otpError } = await supabase.auth.signInWithOtp({ email: normalizedEmail });
-    if (otpError) {
-      setError('Could not send verification email. Try again.');
-      setLoading(false);
-      return;
-    }
-
-    setStep('otp');
+    // Session created, done
+    onLogin();
     setLoading(false);
   };
 
@@ -99,7 +93,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
     if (isNewUser) {
       setStep('set-name');
     } else {
-      // Check if passcode is set
+      // Existing user without passcode — set one up
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -148,6 +142,19 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const handleSetPin = async (pin: string) => {
     setError('');
     setLoading(true);
+
+    // Save PIN as the Supabase auth password so future logins don't need OTP
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: pin,
+    });
+
+    if (updateError) {
+      setError(updateError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Also save hash in profiles for the verify_passcode RPC
     const { error: rpcError } = await supabase.rpc('set_passcode', {
       new_passcode: pin,
     });
@@ -197,11 +204,12 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
           </div>
         )}
 
-        {/* PIN step */}
+        {/* PIN step — returning users, no email needed */}
         {step === 'pin' && (
           <div className="flex flex-col items-center gap-4">
             <PinPad onComplete={handlePinLogin} label="Enter your 4-digit passcode" />
             {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            {loading && <p className="text-gray-400 text-sm">Signing in...</p>}
             <button
               onClick={async () => {
                 setIsNewUser(false);
@@ -216,7 +224,7 @@ export function LoginScreen({ onLogin }: { onLogin: () => void }) {
           </div>
         )}
 
-        {/* OTP step */}
+        {/* OTP step — only for signup and forgot passcode */}
         {step === 'otp' && (
           <div className="w-full flex flex-col gap-4">
             <p className="text-sm text-gray-400 text-center">
