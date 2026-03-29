@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { createFeedPost } from './feed';
 import type { Tournament, Participant, Submission, LeaderboardEntry, SubmissionDot } from '@/types/database';
 
 export function generateInviteCode(): string {
@@ -126,9 +127,9 @@ export async function getMyParticipant(tournamentId: string): Promise<Participan
   return data;
 }
 
-export async function getMyActiveTournament(): Promise<{ tournament: Tournament; participant: Participant } | null> {
+export async function getMyActiveTournaments(): Promise<{ tournament: Tournament; participant: Participant }[]> {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return [];
 
   const { data: participants } = await supabase
     .from('participants')
@@ -137,20 +138,24 @@ export async function getMyActiveTournament(): Promise<{ tournament: Tournament;
     .eq('is_eliminated', false)
     .eq('disqualified', false);
 
-  if (!participants || participants.length === 0) return null;
+  if (!participants || participants.length === 0) return [];
 
-  // Find active or upcoming tournament the user has joined
   const now = new Date();
+  const results: { tournament: Tournament; participant: Participant }[] = [];
   for (const p of participants) {
     const t = (p as any).tournaments as Tournament;
     const start = new Date(t.starts_at);
     const end = new Date(start.getTime() + t.duration_days * 86400000);
-    // Show if tournament hasn't ended yet (includes upcoming + in-progress)
     if (now <= end) {
-      return { tournament: t, participant: p };
+      results.push({ tournament: t, participant: p });
     }
   }
-  return null;
+  return results;
+}
+
+export async function getMyActiveTournament(): Promise<{ tournament: Tournament; participant: Participant } | null> {
+  const results = await getMyActiveTournaments();
+  return results[0] || null;
 }
 
 export async function checkIn(
@@ -172,6 +177,12 @@ export async function checkIn(
   if (error || !data?.success) {
     return { trophy_count: null, brawler_name: null, error: data?.error || error?.message || 'Check-in failed' };
   }
+
+  // Auto-post check-in to tournament feed
+  const checkinMessage = data.brawler_name
+    ? `Checked in for Day ${dayNumber} — ${data.brawler_name} at ${data.trophy_count} trophies`
+    : `Checked in for Day ${dayNumber}`;
+  createFeedPost(tournamentId, checkinMessage, null, 'checkin').catch(() => {});
 
   return { trophy_count: data.trophy_count, brawler_name: data.brawler_name, error: null };
 }

@@ -9,8 +9,9 @@ import { TournamentDetailScreen } from '@/screens/TournamentDetailScreen';
 import { AdminHomeScreen } from '@/screens/AdminHomeScreen';
 import { CreateTournamentScreen } from '@/screens/CreateTournamentScreen';
 import { AdminPanelScreen } from '@/screens/AdminPanelScreen';
+import { FeedScreen } from '@/screens/FeedScreen';
 import { BottomNav, type TabId } from '@/components/BottomNav';
-import { getMyActiveTournament } from '@/lib/tournaments';
+import { getMyActiveTournaments } from '@/lib/tournaments';
 import type { Tournament, Participant } from '@/types/database';
 import { LogOut } from 'lucide-react';
 
@@ -26,26 +27,30 @@ interface HistoryEntry {
 export default function App() {
   const { session, profile, loading, signOut, refreshProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>('checkin');
-  const [activeTournament, setActiveTournament] = useState<{ tournament: Tournament; participant: Participant } | null>(null);
+  const [activeTournaments, setActiveTournaments] = useState<{ tournament: Tournament; participant: Participant }[]>([]);
+  const [selectedTournamentIndex, setSelectedTournamentIndex] = useState(0);
   const [loadingTournament, setLoadingTournament] = useState(false);
   const [historyDetail, setHistoryDetail] = useState<HistoryEntry | null>(null);
   const [adminView, setAdminView] = useState<AdminView>('home');
   const [adminSelectedTournament, setAdminSelectedTournament] = useState<Tournament | null>(null);
   const tournamentLoadedRef = useRef(false);
 
-  const loadActiveTournament = useCallback(async () => {
+  const loadActiveTournaments = useCallback(async () => {
     setLoadingTournament(true);
-    const result = await getMyActiveTournament();
-    setActiveTournament(result);
+    const results = await getMyActiveTournaments();
+    setActiveTournaments(results);
+    if (selectedTournamentIndex >= results.length && results.length > 0) {
+      setSelectedTournamentIndex(0);
+    }
     setLoadingTournament(false);
     tournamentLoadedRef.current = true;
-  }, []);
+  }, [selectedTournamentIndex]);
 
   useEffect(() => {
     if (session && profile && !profile.is_admin && !tournamentLoadedRef.current) {
-      loadActiveTournament();
+      loadActiveTournaments();
     }
-  }, [session, profile, loadActiveTournament]);
+  }, [session, profile, loadActiveTournaments]);
 
   // Loading
   if (loading) {
@@ -110,7 +115,13 @@ export default function App() {
   }
 
   // Regular user
-  const hasActiveTournament = !!activeTournament;
+  const hasActiveTournament = activeTournaments.length > 0;
+  const selectedTournament = hasActiveTournament ? activeTournaments[selectedTournamentIndex] : null;
+
+  const handleSelectTournament = (index: number) => {
+    setSelectedTournamentIndex(index);
+    setActiveTab('checkin');
+  };
 
   return (
     <div className="min-h-screen">
@@ -124,23 +135,35 @@ export default function App() {
 
       {/* Tab content */}
       {activeTab === 'checkin' && (
-        hasActiveTournament ? (
+        hasActiveTournament && selectedTournament ? (
           <CheckInScreen
-            tournament={activeTournament!.tournament}
-            participant={activeTournament!.participant}
+            tournament={selectedTournament.tournament}
+            participant={selectedTournament.participant}
           />
         ) : loadingTournament ? (
           <div className="flex items-center justify-center pt-32">
             <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <JoinScreen onJoined={() => { tournamentLoadedRef.current = false; loadActiveTournament(); }} />
+          <JoinScreen
+            onJoined={() => { tournamentLoadedRef.current = false; loadActiveTournaments(); }}
+            activeTournaments={activeTournaments}
+            onSelectTournament={handleSelectTournament}
+            onGoToHistory={() => setActiveTab('history')}
+          />
         )
       )}
 
-      {activeTab === 'leaderboard' && activeTournament && (
+      {activeTab === 'feed' && selectedTournament && (
+        <FeedScreen
+          tournament={selectedTournament.tournament}
+          myProfileId={profile.id}
+        />
+      )}
+
+      {activeTab === 'leaderboard' && selectedTournament && (
         <LeaderboardScreen
-          tournament={activeTournament.tournament}
+          tournament={selectedTournament.tournament}
           myProfileId={profile.id}
         />
       )}
