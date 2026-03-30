@@ -7,6 +7,7 @@ export interface FeedPost {
   content: string | null;
   image_url: string | null;
   post_type: 'user' | 'checkin';
+  censored: boolean;
   created_at: string;
   profiles: { display_name: string } | null;
 }
@@ -66,4 +67,14 @@ export async function uploadFeedImage(
     .getPublicUrl(path);
 
   return { url: publicUrl, error: null };
+}
+
+export async function censorPost(postId: string): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('feed_posts')
+    .update({ censored: true })
+    .eq('id', postId);
+
+  if (error) return { error: error.message };
+  return { error: null };
 }

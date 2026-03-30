@@ -161,6 +161,7 @@ export default function App() {
         <FeedScreen
           tournament={selectedTournament.tournament}
           myProfileId={profile.id}
+          isAdmin={profile.is_admin}
         />
       )}
 

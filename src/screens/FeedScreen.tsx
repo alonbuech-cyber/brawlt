@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { getFeedPosts, createFeedPost, uploadFeedImage, type FeedPost } from '@/lib/feed';
+import { getFeedPosts, createFeedPost, uploadFeedImage, censorPost, type FeedPost } from '@/lib/feed';
 import { supabase } from '@/lib/supabase';
 import type { Tournament } from '@/types/database';
-import { Send, ImagePlus, Loader2, Trophy, X } from 'lucide-react';
+import { Send, ImagePlus, Loader2, Trophy, X, ShieldBan } from 'lucide-react';
 
 interface FeedScreenProps {
   tournament: Tournament;
   myProfileId: string;
+  isAdmin?: boolean;
 }
 
-export function FeedScreen({ tournament, myProfileId }: FeedScreenProps) {
+export function FeedScreen({ tournament, myProfileId, isAdmin }: FeedScreenProps) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
@@ -29,7 +30,7 @@ export function FeedScreen({ tournament, myProfileId }: FeedScreenProps) {
       .channel(`feed:${tournament.id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'feed_posts', filter: `tournament_id=eq.${tournament.id}` },
+        { event: '*', schema: 'public', table: 'feed_posts', filter: `tournament_id=eq.${tournament.id}` },
         async () => {
           const updated = await getFeedPosts(tournament.id);
           setPosts(updated);
@@ -125,9 +126,10 @@ export function FeedScreen({ tournament, myProfileId }: FeedScreenProps) {
             const displayName = post.profiles?.display_name || 'Anonymous';
             const isMe = post.profile_id === myProfileId;
             const isCheckin = post.post_type === 'checkin';
+            const isCensored = post.censored;
 
             return (
-              <div key={post.id} className={`rounded-2xl p-4 flex flex-col gap-2 ${isCheckin ? 'bg-lime/5 border border-lime/15' : 'brawl-card'}`}>
+              <div key={post.id} className={`rounded-2xl p-4 flex flex-col gap-2 ${isCensored ? 'opacity-50 border border-magenta/20 bg-magenta/5' : isCheckin ? 'bg-lime/5 border border-lime/15' : 'brawl-card'}`}>
                 {/* Author row */}
                 <div className="flex items-center gap-2.5">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isMe ? 'bg-gold/20 text-gold' : 'bg-cyan/20 text-cyan'}`}>
@@ -136,22 +138,38 @@ export function FeedScreen({ tournament, myProfileId }: FeedScreenProps) {
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-semibold text-white">{displayName}</span>
                     {isCheckin && <span className="text-xs text-lime ml-2">checked in</span>}
+                    {isCensored && <span className="text-xs text-magenta ml-2">censored</span>}
                   </div>
-                  <span className="text-[10px] text-text-secondary/50">{formatTime(post.created_at)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-text-secondary/50">{formatTime(post.created_at)}</span>
+                    {isAdmin && !isCensored && post.post_type !== 'checkin' && (
+                      <button
+                        onClick={() => { if (confirm('Censor this post?')) censorPost(post.id); }}
+                        className="text-magenta/40 hover:text-magenta p-1 transition-colors"
+                        title="Censor post"
+                      >
+                        <ShieldBan className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Content */}
-                {post.content && (
-                  <p className="text-sm text-text-secondary leading-relaxed">{post.content}</p>
-                )}
-
-                {/* Image */}
-                {post.image_url && (
-                  <img
-                    src={post.image_url}
-                    alt=""
-                    className="rounded-xl w-full max-h-64 object-cover mt-1"
-                  />
+                {isCensored ? (
+                  <p className="text-sm text-magenta/60 italic">This message has been removed by an admin.</p>
+                ) : (
+                  <>
+                    {post.content && (
+                      <p className="text-sm text-text-secondary leading-relaxed">{post.content}</p>
+                    )}
+                    {post.image_url && (
+                      <img
+                        src={post.image_url}
+                        alt=""
+                        className="rounded-xl w-full max-h-64 object-cover mt-1"
+                      />
+                    )}
+                  </>
                 )}
               </div>
             );
