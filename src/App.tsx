@@ -125,13 +125,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      {/* Sign out */}
-      <button
-        onClick={signOut}
-        className="fixed top-4 right-4 z-50 text-text-secondary/50 p-2"
-      >
-        <LogOut className="w-5 h-5" />
-      </button>
+      {/* User info + sign out */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <span className="text-xs text-text-secondary/60 font-semibold">{profile.display_name}</span>
+        <button
+          onClick={signOut}
+          className="text-text-secondary/50 p-2"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
+      </div>
 
       {/* Tab content */}
       {activeTab === 'checkin' && (
