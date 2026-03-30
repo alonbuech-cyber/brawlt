@@ -164,13 +164,11 @@ export async function checkIn(
   dayNumber: number,
   playerTag: string
 ): Promise<{ trophy_count: number | null; brawler_name: string | null; error: string | null }> {
+  // Step 1: Fetch player data from Brawl Stars API (fast edge function call)
   const { data, error } = await supabase.functions.invoke('fetch-trophies', {
     body: {
-      participant_id: participantId,
-      tournament_id: tournamentId,
-      day_number: dayNumber,
       player_tag: playerTag,
-      action: 'checkin',
+      action: 'validate',
     },
   });
 
@@ -178,13 +176,61 @@ export async function checkIn(
     return { trophy_count: null, brawler_name: null, error: data?.error || error?.message || 'Check-in failed' };
   }
 
+  // Step 2: Find the brawler used in this tournament
+  const { data: participant } = await supabase
+    .from('participants')
+    .select('brawler_name, baseline_trophies')
+    .eq('id', participantId)
+    .single();
+
+  if (!participant) {
+    return { trophy_count: null, brawler_name: null, error: 'Participant not found' };
+  }
+
+  const brawler = data.brawlers?.find(
+    (b: { name: string }) => b.name.toLowerCase() === participant.brawler_name.toLowerCase()
+  );
+
+  if (!brawler) {
+    return { trophy_count: null, brawler_name: null, error: `Brawler "${participant.brawler_name}" not found on this account` };
+  }
+
+  // Step 3: Write submission from client
+  const { error: subError } = await supabase
+    .from('submissions')
+    .upsert(
+      {
+        participant_id: participantId,
+        tournament_id: tournamentId,
+        day_number: dayNumber,
+        image_url: null,
+        trophy_count: brawler.trophies,
+        brawler_detected: brawler.name,
+        ocr_status: 'approved',
+        ocr_confidence: 'high',
+        submitted_at: new Date().toISOString(),
+        reviewed_at: new Date().toISOString(),
+      },
+      { onConflict: 'participant_id,day_number' }
+    );
+
+  if (subError) {
+    return { trophy_count: null, brawler_name: null, error: subError.message };
+  }
+
+  // Step 4: Set baseline on Day 1
+  if (dayNumber === 1 && participant.baseline_trophies === null) {
+    await supabase
+      .from('participants')
+      .update({ baseline_trophies: brawler.trophies })
+      .eq('id', participantId);
+  }
+
   // Auto-post check-in to tournament feed
-  const checkinMessage = data.brawler_name
-    ? `Checked in for Day ${dayNumber} — ${data.brawler_name} at ${data.trophy_count} trophies`
-    : `Checked in for Day ${dayNumber}`;
+  const checkinMessage = `Checked in for Day ${dayNumber} — ${brawler.name} at ${brawler.trophies} trophies`;
   createFeedPost(tournamentId, checkinMessage, null, 'checkin').catch(() => {});
 
-  return { trophy_count: data.trophy_count, brawler_name: data.brawler_name, error: null };
+  return { trophy_count: brawler.trophies, brawler_name: brawler.name, error: null };
 }
 
 export async function getMySubmissions(participantId: string): Promise<Submission[]> {
