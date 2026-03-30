@@ -1,6 +1,6 @@
 import { Home, Upload, MessageSquare, BarChart3, Clock } from 'lucide-react';
 
-export type TabId = 'checkin' | 'feed' | 'leaderboard' | 'history';
+export type TabId = 'home' | 'checkin' | 'feed' | 'leaderboard' | 'history';
 
 interface BottomNavProps {
   active: TabId;
@@ -9,22 +9,21 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ active, onChange, hasActiveTournament }: BottomNavProps) {
-  const tabs: { id: TabId; icon: typeof Upload; activeIcon?: typeof Upload; label: string; inactiveLabel?: string; showAlways?: boolean }[] = [
-    { id: 'checkin', icon: Upload, activeIcon: Upload, label: 'Check-in', inactiveLabel: 'Home' },
-    { id: 'feed', icon: MessageSquare, label: 'Feed' },
-    { id: 'leaderboard', icon: BarChart3, label: 'Leaderboard' },
+  const tabs: { id: TabId; icon: typeof Upload; label: string; showAlways?: boolean; needsTournament?: boolean }[] = [
+    { id: 'home', icon: Home, label: 'Home', showAlways: true },
+    { id: 'checkin', icon: Upload, label: 'Check-in', needsTournament: true },
+    { id: 'feed', icon: MessageSquare, label: 'Feed', needsTournament: true },
+    { id: 'leaderboard', icon: BarChart3, label: 'Leaderboard', needsTournament: true },
     { id: 'history', icon: Clock, label: 'History', showAlways: true },
   ];
 
-  const visibleTabs = tabs.filter(t => t.showAlways || hasActiveTournament);
+  const visibleTabs = tabs.filter(t => t.showAlways || (t.needsTournament && hasActiveTournament));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-deep-bg/95 backdrop-blur-md border-t border-cyan/10 safe-area-bottom">
       <div className="flex justify-around items-center h-20 max-w-lg mx-auto">
-        {visibleTabs.map(({ id, icon: Icon, activeIcon, label, inactiveLabel }) => {
+        {visibleTabs.map(({ id, icon: Icon, label }) => {
           const isActive = active === id;
-          const DisplayIcon = !hasActiveTournament && id === 'checkin' ? Home : Icon;
-          const displayLabel = !hasActiveTournament && id === 'checkin' && inactiveLabel ? inactiveLabel : label;
           return (
             <button
               key={id}
@@ -34,8 +33,8 @@ export function BottomNav({ active, onChange, hasActiveTournament }: BottomNavPr
               }`}
               style={isActive ? { filter: 'drop-shadow(0 0 8px rgba(255,204,0,0.5))' } : {}}
             >
-              <DisplayIcon className="w-6 h-6" />
-              <span className="text-[11px] font-bold">{displayLabel}</span>
+              <Icon className="w-6 h-6" />
+              <span className="text-[11px] font-bold">{label}</span>
             </button>
           );
         })}

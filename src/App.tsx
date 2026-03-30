@@ -26,7 +26,7 @@ interface HistoryEntry {
 
 export default function App() {
   const { session, profile, loading, signOut, refreshProfile } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabId>('checkin');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
   const [activeTournaments, setActiveTournaments] = useState<{ tournament: Tournament; participant: Participant }[]>([]);
   const [selectedTournamentIndex, setSelectedTournamentIndex] = useState(0);
   const [loadingTournament, setLoadingTournament] = useState(false);
@@ -137,24 +137,20 @@ export default function App() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'checkin' && (
-        hasActiveTournament && selectedTournament ? (
-          <CheckInScreen
-            tournament={selectedTournament.tournament}
-            participant={selectedTournament.participant}
-          />
-        ) : loadingTournament ? (
-          <div className="flex items-center justify-center pt-32">
-            <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <JoinScreen
-            onJoined={() => { tournamentLoadedRef.current = false; loadActiveTournaments(); }}
-            activeTournaments={activeTournaments}
-            onSelectTournament={handleSelectTournament}
-            onGoToHistory={() => setActiveTab('history')}
-          />
-        )
+      {activeTab === 'home' && (
+        <JoinScreen
+          onJoined={() => { tournamentLoadedRef.current = false; loadActiveTournaments(); }}
+          activeTournaments={activeTournaments}
+          onSelectTournament={handleSelectTournament}
+          onGoToHistory={() => setActiveTab('history')}
+        />
+      )}
+
+      {activeTab === 'checkin' && selectedTournament && (
+        <CheckInScreen
+          tournament={selectedTournament.tournament}
+          participant={selectedTournament.participant}
+        />
       )}
 
       {activeTab === 'feed' && selectedTournament && (
@@ -173,7 +169,7 @@ export default function App() {
       )}
 
       {activeTab === 'history' && (
-        <HistoryScreen onSelectTournament={setHistoryDetail} onBack={() => setActiveTab('checkin')} />
+        <HistoryScreen onSelectTournament={setHistoryDetail} onBack={() => setActiveTab('home')} />
       )}
 
       <BottomNav
