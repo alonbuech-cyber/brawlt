@@ -10,6 +10,7 @@ import { AdminHomeScreen } from '@/screens/AdminHomeScreen';
 import { CreateTournamentScreen } from '@/screens/CreateTournamentScreen';
 import { AdminPanelScreen } from '@/screens/AdminPanelScreen';
 import { FeedScreen } from '@/screens/FeedScreen';
+import { TournamentSwitcher } from '@/components/TournamentSwitcher';
 import { BottomNav, type TabId } from '@/components/BottomNav';
 import { getMyActiveTournaments } from '@/lib/tournaments';
 import type { Tournament, Participant } from '@/types/database';
@@ -146,26 +147,36 @@ export default function App() {
         />
       )}
 
-      {activeTab === 'checkin' && selectedTournament && (
-        <CheckInScreen
-          tournament={selectedTournament.tournament}
-          participant={selectedTournament.participant}
-        />
-      )}
+      {(activeTab === 'checkin' || activeTab === 'feed' || activeTab === 'leaderboard') && selectedTournament && (
+        <>
+          <TournamentSwitcher
+            tournaments={activeTournaments.map(t => t.tournament)}
+            selectedIndex={selectedTournamentIndex}
+            onSelect={setSelectedTournamentIndex}
+          />
 
-      {activeTab === 'feed' && selectedTournament && (
-        <FeedScreen
-          tournament={selectedTournament.tournament}
-          myProfileId={profile.id}
-          isAdmin={profile.is_admin}
-        />
-      )}
+          {activeTab === 'checkin' && (
+            <CheckInScreen
+              tournament={selectedTournament.tournament}
+              participant={selectedTournament.participant}
+            />
+          )}
 
-      {activeTab === 'leaderboard' && selectedTournament && (
-        <LeaderboardScreen
-          tournament={selectedTournament.tournament}
-          myProfileId={profile.id}
-        />
+          {activeTab === 'feed' && (
+            <FeedScreen
+              tournament={selectedTournament.tournament}
+              myProfileId={profile.id}
+              isAdmin={profile.is_admin}
+            />
+          )}
+
+          {activeTab === 'leaderboard' && (
+            <LeaderboardScreen
+              tournament={selectedTournament.tournament}
+              myProfileId={profile.id}
+            />
+          )}
+        </>
       )}
 
       {activeTab === 'history' && (
