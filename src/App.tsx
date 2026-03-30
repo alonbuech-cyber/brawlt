@@ -169,7 +169,7 @@ export default function App() {
       )}
 
       {activeTab === 'history' && (
-        <HistoryScreen onSelectTournament={setHistoryDetail} />
+        <HistoryScreen onSelectTournament={setHistoryDetail} onBack={() => setActiveTab('checkin')} />
       )}
 
       <BottomNav

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getMyPastTournaments } from '@/lib/tournaments';
 import { BracketBadge } from '@/components/BracketBadge';
 import type { Tournament, Participant } from '@/types/database';
-import { Clock, ChevronRight } from 'lucide-react';
+import { Clock, ChevronRight, ArrowLeft } from 'lucide-react';
 
 interface HistoryEntry {
   tournament: Tournament;
@@ -13,9 +13,10 @@ interface HistoryEntry {
 
 interface HistoryScreenProps {
   onSelectTournament: (entry: HistoryEntry) => void;
+  onBack?: () => void;
 }
 
-export function HistoryScreen({ onSelectTournament }: HistoryScreenProps) {
+export function HistoryScreen({ onSelectTournament, onBack }: HistoryScreenProps) {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,8 +46,15 @@ export function HistoryScreen({ onSelectTournament }: HistoryScreenProps) {
   return (
     <div className="px-4 pt-6 pb-24">
       <div className="max-w-sm mx-auto flex flex-col gap-5">
-        <div className="text-center">
+        <div className="flex items-center justify-between">
+          {onBack ? (
+            <button onClick={onBack} className="flex items-center gap-2 text-text-secondary">
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm">Back</span>
+            </button>
+          ) : <div />}
           <h1 className="text-lg font-bold text-white">Tournament History</h1>
+          <div className="w-16" />
         </div>
 
         {entries.length === 0 && (
