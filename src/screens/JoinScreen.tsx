@@ -3,7 +3,7 @@ import { CodeInput } from '@/components/CodeInput';
 import { BracketBadge } from '@/components/BracketBadge';
 import { fetchTournamentByCode, joinTournament, validatePlayerTag, checkIn, getParticipantCount, getCurrentDay } from '@/lib/tournaments';
 import type { Tournament, Participant } from '@/types/database';
-import { Calendar, Clock, Users, Lock, Search, CheckCircle, Loader2, HelpCircle, ChevronDown, ChevronUp, Ticket, Trophy, Compass, Crown } from 'lucide-react';
+import { Calendar, Clock, Users, Lock, Search, CheckCircle, Loader2, HelpCircle, ChevronDown, ChevronUp, Ticket, Trophy, Compass, Crown, Swords } from 'lucide-react';
 
 interface ActiveTournamentEntry {
   tournament: Tournament;
@@ -24,6 +24,7 @@ interface BrawlerInfo {
 
 export function JoinScreen({ onJoined, activeTournaments, onSelectTournament, onGoToHistory }: JoinScreenProps) {
   const [showJoinCode, setShowJoinCode] = useState(false);
+  const [showActiveTournaments, setShowActiveTournaments] = useState(false);
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [participantCount, setParticipantCount] = useState(0);
   const [error, setError] = useState('');
@@ -348,48 +349,71 @@ export function JoinScreen({ onJoined, activeTournaments, onSelectTournament, on
           <img src="/logo.png" alt="BrawlT" className="w-28 h-28 object-contain drop-shadow-[0_0_20px_rgba(255,204,0,0.2)]" />
         </div>
 
-        {/* Active Tournaments */}
-        {activeTournaments.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <h2 className="text-sm font-bold text-text-secondary uppercase tracking-wider">Your Tournaments</h2>
-            {activeTournaments.map((entry, index) => {
-              const day = getCurrentDay(entry.tournament);
-              const isUpcoming = day === 0;
-              return (
-                <button
-                  key={entry.tournament.id}
-                  onClick={() => onSelectTournament(index)}
-                  className="brawl-card-gold p-4 flex items-center gap-4 text-left transition-all active:scale-[0.98]"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center shrink-0">
-                    <Trophy className="w-5 h-5 text-gold" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-bold text-white truncate">{entry.tournament.name}</span>
-                      <BracketBadge bracket={entry.tournament.bracket_name} />
-                    </div>
-                    <p className="text-xs text-text-secondary">
-                      {isUpcoming
-                        ? `Starts ${new Date(entry.tournament.starts_at).toLocaleDateString()}`
-                        : `Day ${day} of ${entry.tournament.duration_days}`}
-                      {' · '}{entry.participant.brawler_name}
-                    </p>
-                  </div>
-                  <div className={`text-xs font-bold px-2.5 py-1 rounded-full ${isUpcoming ? 'bg-cyan/15 text-cyan' : 'bg-lime/15 text-lime'}`}>
-                    {isUpcoming ? 'Upcoming' : 'Live'}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {/* Action cards */}
         <div className="flex flex-col gap-3">
-          {activeTournaments.length === 0 && (
-            <h2 className="text-sm font-bold text-text-secondary uppercase tracking-wider">Get Started</h2>
-          )}
+
+          {/* Active Tournaments */}
+          <div>
+            <button
+              onClick={() => setShowActiveTournaments(!showActiveTournaments)}
+              className="brawl-card p-4 flex items-center gap-4 text-left transition-all active:scale-[0.98] hover:border-lime/30 w-full"
+            >
+              <div className="w-10 h-10 rounded-xl bg-lime/15 flex items-center justify-center shrink-0">
+                <Swords className="w-5 h-5 text-lime" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">Active Tournaments</p>
+                <p className="text-xs text-text-secondary">
+                  {activeTournaments.length > 0
+                    ? `${activeTournaments.length} tournament${activeTournaments.length > 1 ? 's' : ''} in progress`
+                    : 'No active tournaments'}
+                </p>
+              </div>
+              {showActiveTournaments ? <ChevronUp className="w-5 h-5 text-text-secondary/50 shrink-0" /> : <ChevronDown className="w-5 h-5 text-text-secondary/50 shrink-0" />}
+            </button>
+
+            {showActiveTournaments && (
+              <div className="mt-2 flex flex-col gap-2">
+                {activeTournaments.length > 0 ? (
+                  activeTournaments.map((entry, index) => {
+                    const day = getCurrentDay(entry.tournament);
+                    const isUpcoming = day === 0;
+                    return (
+                      <button
+                        key={entry.tournament.id}
+                        onClick={() => onSelectTournament(index)}
+                        className="brawl-card-gold p-4 flex items-center gap-4 text-left transition-all active:scale-[0.98]"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center shrink-0">
+                          <Trophy className="w-5 h-5 text-gold" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-sm font-bold text-white truncate">{entry.tournament.name}</span>
+                            <BracketBadge bracket={entry.tournament.bracket_name} />
+                          </div>
+                          <p className="text-xs text-text-secondary">
+                            {isUpcoming
+                              ? `Starts ${new Date(entry.tournament.starts_at).toLocaleDateString()}`
+                              : `Day ${day} of ${entry.tournament.duration_days}`}
+                            {' · '}{entry.participant.brawler_name}
+                          </p>
+                        </div>
+                        <div className={`text-xs font-bold px-2.5 py-1 rounded-full ${isUpcoming ? 'bg-cyan/15 text-cyan' : 'bg-lime/15 text-lime'}`}>
+                          {isUpcoming ? 'Upcoming' : 'Live'}
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="brawl-card p-5 text-center">
+                    <p className="text-sm text-text-secondary/60 mb-1">No active tournaments</p>
+                    <p className="text-xs text-text-secondary/40">Use an invite code to join a tournament, or search by location (coming soon)</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Join with Code */}
           <button

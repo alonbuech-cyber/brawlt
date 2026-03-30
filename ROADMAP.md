@@ -4,9 +4,9 @@
 
 | # | Feature | Status | Description |
 |---|---------|--------|-------------|
-| 1 | JoinScreen → Home Hub | todo | Transform bare code-input into a hub: active tournaments list, history button, join-with-code, Coming Soon placeholders for Find/Create |
-| 2 | Multiple Active Tournaments | todo | Support switching between multiple active tournaments (currently only shows the first) |
-| 3 | Tournament Feed / Timeline | todo | Per-tournament feed with text + image posts. Auto-post check-ins. New BottomNav tab |
+| 1 | JoinScreen → Home Hub | done | Transform bare code-input into a hub: active tournaments list, history button, join-with-code, Coming Soon placeholders for Find/Create |
+| 2 | Multiple Active Tournaments | done | Support switching between multiple active tournaments (currently only shows the first) |
+| 3 | Tournament Feed / Timeline | done | Per-tournament feed with text + image posts. Auto-post check-ins. New BottomNav tab. Admin censoring |
 
 ---
 
@@ -19,6 +19,9 @@
 | 6 | Paid Admin (Create Your Own) | P2 | `can_create_tournaments` flag on profiles. Gated behind BT balance. Same admin UI, filtered to own tournaments. Show value prop + waitlist before payments are live |
 | 7 | Prize Acknowledgment | P2 | Tournament card shows BT prize on join. Player confirms acknowledgment before joining |
 | 8 | Regional Feed | P3 | Prestige feature: admins from region + tournament winners can post 1 message/day to a public regional feed. Depends on regions being established |
+| 9 | Tutorial / Onboarding | P2 | First-time tutorial screens walking new users through the app (join, check-in, feed, leaderboard). Help icon in UI to re-launch tutorial or submit an error report to admin |
+| 10 | In-app Tournament Invites | P2 | Invite users to a tournament directly within the app (not just sharing a code externally) |
+| 11 | Join by Location & Association | P2 | Request to join tournaments by location or group/club association. Ties into region-based discovery |
 
 ---
 
