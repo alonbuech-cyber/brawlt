@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { getFeedPosts, createFeedPost, uploadFeedImage, censorPost, type FeedPost } from '@/lib/feed';
+import { useState, useEffect } from 'react';
+import { getFeedPosts, createFeedPost, censorPost, type FeedPost } from '@/lib/feed';
 import { supabase } from '@/lib/supabase';
 import type { Tournament } from '@/types/database';
-import { Send, ImagePlus, Loader2, Trophy, X, ShieldBan } from 'lucide-react';
+import { Send, Loader2, Trophy, ShieldBan } from 'lucide-react';
 
 interface FeedScreenProps {
   tournament: Tournament;
@@ -14,10 +14,7 @@ export function FeedScreen({ tournament, myProfileId, isAdmin }: FeedScreenProps
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     getFeedPosts(tournament.id).then(data => {
@@ -41,40 +38,12 @@ export function FeedScreen({ tournament, myProfileId, isAdmin }: FeedScreenProps
     return () => { supabase.removeChannel(channel); };
   }, [tournament.id]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
   const handleSend = async () => {
-    if (!text.trim() && !imageFile) return;
+    if (!text.trim()) return;
     setSending(true);
-
-    let imageUrl: string | null = null;
-    if (imageFile) {
-      const { url, error } = await uploadFeedImage(tournament.id, imageFile);
-      if (error) {
-        setSending(false);
-        return;
-      }
-      imageUrl = url;
-    }
-
-    await createFeedPost(tournament.id, text.trim() || null, imageUrl);
+    await createFeedPost(tournament.id, text.trim(), null);
     setText('');
-    setImageFile(null);
-    setImagePreview(null);
     setSending(false);
-  };
-
-  const clearImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const getInitials = (name: string) => {
@@ -180,34 +149,7 @@ export function FeedScreen({ tournament, myProfileId, isAdmin }: FeedScreenProps
       {/* Compose bar */}
       <div className="fixed bottom-20 left-0 right-0 bg-deep-bg/95 backdrop-blur-md border-t border-cyan/10 px-4 py-3 safe-area-bottom">
         <div className="max-w-sm mx-auto">
-          {/* Image preview */}
-          {imagePreview && (
-            <div className="relative mb-2 inline-block">
-              <img src={imagePreview} alt="" className="h-16 rounded-lg object-cover" />
-              <button
-                onClick={clearImage}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-magenta rounded-full flex items-center justify-center"
-              >
-                <X className="w-3 h-3 text-white" />
-              </button>
-            </div>
-          )}
-
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="text-text-secondary/50 p-2 hover:text-cyan transition-colors"
-            >
-              <ImagePlus className="w-5 h-5" />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleImageSelect}
-              className="hidden"
-            />
             <input
               type="text"
               value={text}
@@ -218,7 +160,7 @@ export function FeedScreen({ tournament, myProfileId, isAdmin }: FeedScreenProps
             />
             <button
               onClick={handleSend}
-              disabled={sending || (!text.trim() && !imageFile)}
+              disabled={sending || !text.trim()}
               className="text-gold disabled:text-text-secondary/30 p-2 transition-colors"
             >
               {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}

@@ -22,6 +22,7 @@
 | 9 | Tutorial / Onboarding | P2 | First-time tutorial screens walking new users through the app (join, check-in, feed, leaderboard). Help icon in UI to re-launch tutorial or submit an error report to admin |
 | 10 | In-app Tournament Invites | P2 | Invite users to a tournament directly within the app (not just sharing a code externally) |
 | 11 | Join by Location & Association | P2 | Request to join tournaments by location or group/club association. Ties into region-based discovery |
+| 12 | Feed Image Uploads | P3 | Re-enable image uploads in tournament feed. Fix storage/upload error before re-enabling |
 
 ---
 
